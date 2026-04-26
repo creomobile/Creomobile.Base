@@ -16,4 +16,10 @@
     <Project Path="src/Data/Creomobile.Data.Abstractions/Creomobile.Data.Abstractions.csproj" />
     <Project Path="src/Data/Creomobile.Data.EFCore/Creomobile.Data.EFCore.csproj" />
   </Folder>
+  <Folder Name="/src/Data/Tests/">
+    <Project Path="tests/Creomobile.Data.EFCore.IntegrationTests/Creomobile.Data.EFCore.IntegrationTests.csproj" Id="a28b9396-56ce-443e-bd44-da7111ee8458" />
+  </Folder>
+  <Folder Name="/tests/">
+    <File Path="tests/Directory.Build.props" />
+  </Folder>
 </Solution>
