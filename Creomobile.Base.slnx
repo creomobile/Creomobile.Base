@@ -4,7 +4,10 @@
     <File Path="Directory.Build.props" />
     <File Path="README.md" />
   </Folder>
-  <Folder Name="/Data/">
+  <Folder Name="/src/">
+    <File Path="src/Directory.Build.props" />
+  </Folder>
+  <Folder Name="/src/Data/">
     <Project Path="src/Data/Creomobile.Data.Abstractions/Creomobile.Data.Abstractions.csproj" />
     <Project Path="src/Data/Creomobile.Data.EFCore/Creomobile.Data.EFCore.csproj" />
   </Folder>

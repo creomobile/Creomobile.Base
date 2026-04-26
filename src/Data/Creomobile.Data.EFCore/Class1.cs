@@ -1,6 +1,6 @@
 ﻿namespace Creomobile.Data.EFCore;
 
-public class Class1
+internal class Class1
 {
 
 }
