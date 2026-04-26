@@ -1,0 +1,15 @@
+name: Publish Creomobile.Data.Abstractions
+
+on:
+  push:
+    tags:
+      - "creomobile.data.abstractions/v*"
+
+jobs:
+  publish:
+    uses: ./.github/workflows/nuget-publish-reusable.yml
+    with:
+      package_id: Creomobile.Data.Abstractions
+      project_path: src/Data/Creomobile.Data.Abstractions/Creomobile.Data.Abstractions.csproj
+      tag_prefix: creomobile.data.abstractions/
+    secrets: inherit

@@ -4,6 +4,11 @@
     <File Path="Directory.Build.props" />
     <File Path="README.md" />
   </Folder>
+  <Folder Name="/.Solution Items/publish/">
+    <File Path=".github\workflows\nuget-publish-reusable.yml" />
+    <File Path=".github\workflows\publish-data-abstractions.yml" />
+    <File Path=".github\workflows\publish-data-efcore.yml" />
+  </Folder>
   <Folder Name="/src/">
     <File Path="src/Directory.Build.props" />
   </Folder>
