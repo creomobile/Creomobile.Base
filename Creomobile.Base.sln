@@ -1,0 +1,98 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
+	ProjectSection(SolutionItems) = preProject
+		src\Directory.Build.props = src\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".Solution Items", ".Solution Items", "{D3A6813D-32DD-4CA6-97C7-8EE3BA90E73C}"
+	ProjectSection(SolutionItems) = preProject
+		.github\copilot-instructions.md = .github\copilot-instructions.md
+		Directory.Build.props = Directory.Build.props
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "publish", "publish", "{2263783F-F0B3-4D6D-A9A4-17AB072B5E94}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\nuget-publish-reusable.yml = .github\workflows\nuget-publish-reusable.yml
+		.github\workflows\publish-data-abstractions.yml = .github\workflows\publish-data-abstractions.yml
+		.github\workflows\publish-data-efcore.yml = .github\workflows\publish-data-efcore.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{3AA2FB26-5E76-42CA-9402-D69601B0C9D0}"
+	ProjectSection(SolutionItems) = preProject
+		tests\Directory.Build.props = tests\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Data", "Data", "{58A5B24B-8FB4-5A6E-5EF4-1E3E19F29B1B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Creomobile.Data.Abstractions", "src\Data\Creomobile.Data.Abstractions\Creomobile.Data.Abstractions.csproj", "{A167A0E5-9567-43B1-943A-E5BB08AEC73E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Creomobile.Data.EFCore", "src\Data\Creomobile.Data.EFCore\Creomobile.Data.EFCore.csproj", "{3F3AF6D9-1527-4FCD-B562-0D9F108595B1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{EDED54E2-5985-44BA-5061-D94B338C5818}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Creomobile.Data.EFCore.IntegrationTests", "tests\Creomobile.Data.EFCore.IntegrationTests\Creomobile.Data.EFCore.IntegrationTests.csproj", "{63904A30-6C6B-459B-8A89-11276B9AEA34}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A167A0E5-9567-43B1-943A-E5BB08AEC73E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A167A0E5-9567-43B1-943A-E5BB08AEC73E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A167A0E5-9567-43B1-943A-E5BB08AEC73E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A167A0E5-9567-43B1-943A-E5BB08AEC73E}.Debug|x64.Build.0 = Debug|Any CPU
+		{A167A0E5-9567-43B1-943A-E5BB08AEC73E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A167A0E5-9567-43B1-943A-E5BB08AEC73E}.Debug|x86.Build.0 = Debug|Any CPU
+		{A167A0E5-9567-43B1-943A-E5BB08AEC73E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A167A0E5-9567-43B1-943A-E5BB08AEC73E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A167A0E5-9567-43B1-943A-E5BB08AEC73E}.Release|x64.ActiveCfg = Release|Any CPU
+		{A167A0E5-9567-43B1-943A-E5BB08AEC73E}.Release|x64.Build.0 = Release|Any CPU
+		{A167A0E5-9567-43B1-943A-E5BB08AEC73E}.Release|x86.ActiveCfg = Release|Any CPU
+		{A167A0E5-9567-43B1-943A-E5BB08AEC73E}.Release|x86.Build.0 = Release|Any CPU
+		{3F3AF6D9-1527-4FCD-B562-0D9F108595B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F3AF6D9-1527-4FCD-B562-0D9F108595B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F3AF6D9-1527-4FCD-B562-0D9F108595B1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3F3AF6D9-1527-4FCD-B562-0D9F108595B1}.Debug|x64.Build.0 = Debug|Any CPU
+		{3F3AF6D9-1527-4FCD-B562-0D9F108595B1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3F3AF6D9-1527-4FCD-B562-0D9F108595B1}.Debug|x86.Build.0 = Debug|Any CPU
+		{3F3AF6D9-1527-4FCD-B562-0D9F108595B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F3AF6D9-1527-4FCD-B562-0D9F108595B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F3AF6D9-1527-4FCD-B562-0D9F108595B1}.Release|x64.ActiveCfg = Release|Any CPU
+		{3F3AF6D9-1527-4FCD-B562-0D9F108595B1}.Release|x64.Build.0 = Release|Any CPU
+		{3F3AF6D9-1527-4FCD-B562-0D9F108595B1}.Release|x86.ActiveCfg = Release|Any CPU
+		{3F3AF6D9-1527-4FCD-B562-0D9F108595B1}.Release|x86.Build.0 = Release|Any CPU
+		{63904A30-6C6B-459B-8A89-11276B9AEA34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63904A30-6C6B-459B-8A89-11276B9AEA34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63904A30-6C6B-459B-8A89-11276B9AEA34}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{63904A30-6C6B-459B-8A89-11276B9AEA34}.Debug|x64.Build.0 = Debug|Any CPU
+		{63904A30-6C6B-459B-8A89-11276B9AEA34}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{63904A30-6C6B-459B-8A89-11276B9AEA34}.Debug|x86.Build.0 = Debug|Any CPU
+		{63904A30-6C6B-459B-8A89-11276B9AEA34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63904A30-6C6B-459B-8A89-11276B9AEA34}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63904A30-6C6B-459B-8A89-11276B9AEA34}.Release|x64.ActiveCfg = Release|Any CPU
+		{63904A30-6C6B-459B-8A89-11276B9AEA34}.Release|x64.Build.0 = Release|Any CPU
+		{63904A30-6C6B-459B-8A89-11276B9AEA34}.Release|x86.ActiveCfg = Release|Any CPU
+		{63904A30-6C6B-459B-8A89-11276B9AEA34}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{2263783F-F0B3-4D6D-A9A4-17AB072B5E94} = {D3A6813D-32DD-4CA6-97C7-8EE3BA90E73C}
+		{58A5B24B-8FB4-5A6E-5EF4-1E3E19F29B1B} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{A167A0E5-9567-43B1-943A-E5BB08AEC73E} = {58A5B24B-8FB4-5A6E-5EF4-1E3E19F29B1B}
+		{3F3AF6D9-1527-4FCD-B562-0D9F108595B1} = {58A5B24B-8FB4-5A6E-5EF4-1E3E19F29B1B}
+		{EDED54E2-5985-44BA-5061-D94B338C5818} = {58A5B24B-8FB4-5A6E-5EF4-1E3E19F29B1B}
+		{63904A30-6C6B-459B-8A89-11276B9AEA34} = {EDED54E2-5985-44BA-5061-D94B338C5818}
+	EndGlobalSection
+EndGlobal
