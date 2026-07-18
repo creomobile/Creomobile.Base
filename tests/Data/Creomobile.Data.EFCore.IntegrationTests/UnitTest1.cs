@@ -1,6 +1,6 @@
 ﻿namespace Creomobile.Data.EFCore.IntegrationTests;
 
-public sealed class UnitTest1(PostgresFixture postgresFixture) : IClassFixture<PostgresFixture>
+public sealed class UnitTest1(PostgresFixture postgresFixture)
 {
     [Fact]
     public void Test1()

@@ -3,4 +3,8 @@
 		<Version>0.0.1</Version>
 		<Description>EF Core integration for Creomobile data models</Description>
 	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
+	</ItemGroup>
 </Project>
