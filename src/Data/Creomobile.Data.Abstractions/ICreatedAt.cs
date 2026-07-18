@@ -3,7 +3,7 @@
 /// <summary>
 /// Marks an entity whose creation instant should be automatically populated on insert.
 /// </summary>
-public interface ICreatedAtTimestamp
+public interface ICreatedAt
 {
     /// <summary>
     /// UTC creation timestamp (stored without time zone in database).
