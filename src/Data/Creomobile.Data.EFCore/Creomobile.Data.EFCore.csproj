@@ -7,4 +7,8 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
 	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Creomobile.Data.Abstractions\Creomobile.Data.Abstractions.csproj" />
+	</ItemGroup>
 </Project>

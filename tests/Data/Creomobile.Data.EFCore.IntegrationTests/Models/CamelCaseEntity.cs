@@ -1,13 +1,13 @@
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Creomobile.Data.EFCore.IntegrationTests;
+namespace Creomobile.Data.EFCore.IntegrationTests.Models;
 
-public sealed class Customer
+public sealed class CamelCaseEntity
 {
     public int Id { get; set; }
 
     // ReSharper disable once EntityFramework.ModelValidation.UnlimitedStringLength
-    public string Name { get; set; } = null!;
+    public string ConventionNamed { get; set; } = null!;
 
     // ReSharper disable once EntityFramework.ModelValidation.UnlimitedStringLength
     [Column("LegacyName")]

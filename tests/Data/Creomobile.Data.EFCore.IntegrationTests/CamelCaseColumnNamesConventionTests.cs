@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace Creomobile.Data.EFCore.IntegrationTests;
 
@@ -9,45 +8,19 @@ public sealed class CamelCaseColumnNamesConventionTests(PostgresFixture postgres
     public async Task CreatesCamelCaseColumnsForDefaultNamesOnly()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var connectionString = new NpgsqlConnectionStringBuilder(
-            postgresFixture.Container.GetConnectionString())
-        {
-            Database = "convention_tests",
-        }.ConnectionString;
+        var connectionString = TestDatabase.ConnectionString(postgresFixture, "camel_case_tests");
 
-        var options = new DbContextOptionsBuilder<ConventionTestContext>()
+        var options = new DbContextOptionsBuilder<CamelCaseTestContext>()
             .UseNpgsql(connectionString)
             .UseCamelCaseColumnNames()
             .Options;
 
-        await using var context = new ConventionTestContext(options);
+        await using var context = new CamelCaseTestContext(options);
         await context.Database.EnsureCreatedAsync(cancellationToken);
 
-        var columns = await GetTableColumnsAsync(connectionString, "Customers", cancellationToken);
+        var columns = await TestDatabase.GetTableColumnsAsync(
+            connectionString, "CamelCaseEntities", cancellationToken);
 
-        columns.Should().BeEquivalentTo("id", "name", "LegacyName");
-    }
-
-    static async Task<List<string>> GetTableColumnsAsync(
-        string connectionString, string tableName, CancellationToken cancellationToken)
-    {
-        await using var connection = new NpgsqlConnection(connectionString);
-        await connection.OpenAsync(cancellationToken);
-
-        await using var command = new NpgsqlCommand(
-            """
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_schema = 'public' AND table_name = $1
-            """,
-            connection);
-        command.Parameters.AddWithValue(tableName);
-
-        var columns = new List<string>();
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        while (await reader.ReadAsync(cancellationToken))
-            columns.Add(reader.GetString(0));
-
-        return columns;
+        columns.Should().BeEquivalentTo("id", "conventionNamed", "LegacyName");
     }
 }

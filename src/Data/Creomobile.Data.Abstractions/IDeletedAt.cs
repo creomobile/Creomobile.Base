@@ -6,7 +6,7 @@
 public interface IDeletedAt
 {
     /// <summary>
-    /// UTC deletion timestamp (stored without time zone in database) or <c>null</c> if not deleted.
+    /// UTC deletion timestamp or <c>null</c> if not deleted. Values must have <see cref="DateTimeKind.Utc"/>.
     /// </summary>
     DateTime? DeletedAt { get; set; }
 }

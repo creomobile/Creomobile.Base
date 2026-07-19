@@ -6,7 +6,7 @@
 public interface ICreatedAt
 {
     /// <summary>
-    /// UTC creation timestamp (stored without time zone in database).
+    /// UTC creation timestamp. Values must have <see cref="DateTimeKind.Utc"/>.
     /// </summary>
     DateTime CreatedAt { get; set; }
 }

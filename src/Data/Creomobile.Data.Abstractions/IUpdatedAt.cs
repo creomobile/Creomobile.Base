@@ -6,7 +6,7 @@
 public interface IUpdatedAt
 {
     /// <summary>
-    /// UTC last modification timestamp (stored without time zone in database).
+    /// UTC last modification timestamp. Values must have <see cref="DateTimeKind.Utc"/>.
     /// </summary>
     DateTime UpdatedAt { get; set; }
 }
