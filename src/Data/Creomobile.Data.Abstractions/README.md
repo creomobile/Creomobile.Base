@@ -1,17 +1,22 @@
 # Creomobile.Data.Abstractions
 
-Core abstractions for Creomobile data models.
+Core abstractions for data models: entity base types and timestamp contracts.
 
 ## Overview
 
 Provides base interfaces and classes for defining strongly-typed, persistable entities:
 
-- **`IEntityBase<TId>`** — interface for entities with a strongly-typed primary key.
+- **`IEntityBase<TId>`** — an entity with a strongly-typed primary key.
 - **`EntityBase<TId>`** — abstract base class implementing `IEntityBase<TId>`.
-- **`ICreatedAt`** — marks an entity with a UTC creation timestamp, automatically populated on insert.
-- **`IUpdatedAt`** — marks an entity with a UTC last-update timestamp, automatically maintained on insert and update.
-- **`IDeletedAt`** — marks an entity supporting soft deletion semantics.
-- **`ITimestamps`** — convenience aggregate of all three timestamp interfaces.
+- **`ICreatedAt`** — declares a UTC creation timestamp.
+- **`IUpdatedAt`** — declares a UTC last-update timestamp.
+- **`IDeletedAt`** — declares a nullable UTC deletion timestamp (soft delete).
+- **`ITimestamps`** — combines `ICreatedAt`, `IUpdatedAt` and `IDeletedAt`.
+
+The interfaces only declare the properties: automatic population and
+soft-delete filtering are provided by the `Creomobile.Data.EFCore` package
+(`UseTimestamps()`). All timestamps are UTC — values must have
+`DateTimeKind.Utc`.
 
 ## Requirements
 

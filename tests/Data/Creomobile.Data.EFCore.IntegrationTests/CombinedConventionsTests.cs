@@ -5,7 +5,7 @@ namespace Creomobile.Data.EFCore.IntegrationTests;
 
 public sealed class CombinedConventionsTests(PostgresFixture postgresFixture)
 {
-    private const string Database = "combined_tests";
+    const string Database = "combined_tests";
 
     [Fact]
     public async Task CamelCaseAndTimestampsWorkTogether()
@@ -53,5 +53,40 @@ public sealed class CombinedConventionsTests(PostgresFixture postgresFixture)
         var rows = await TestDatabase.CountRowsAsync(
             connectionString, "CombinedEntities", "id", id, cancellationToken);
         rows.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task UseCreomobileDefaultsAppliesBothFeatures()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var connectionString = TestDatabase.ConnectionString(postgresFixture, "creomobile_defaults_tests");
+        var options = new DbContextOptionsBuilder<CombinedTestContext>()
+            .UseNpgsql(connectionString)
+            .UseCreomobileDefaults()
+            .Options;
+
+        int id;
+        await using (var context = new CombinedTestContext(options))
+        {
+            await context.Database.EnsureCreatedAsync(cancellationToken);
+            var entity = new CombinedEntity { Payload = "defaults" };
+            context.Add(entity);
+            await context.SaveChangesAsync(cancellationToken);
+            id = entity.Id;
+            entity.CreatedAt.Should().NotBe(default);
+        }
+
+        var columns = await TestDatabase.GetTableColumnsAsync(
+            connectionString, "CombinedEntities", cancellationToken);
+        columns.Should().BeEquivalentTo("id", "payload", "createdAt", "updatedAt", "deletedAt");
+
+        await using (var context = new CombinedTestContext(options))
+        {
+            context.Remove(await context.CombinedEntities.SingleAsync(e => e.Id == id, cancellationToken));
+            await context.SaveChangesAsync(cancellationToken);
+
+            (await context.CombinedEntities.AnyAsync(e => e.Id == id, cancellationToken))
+                .Should().BeFalse();
+        }
     }
 }

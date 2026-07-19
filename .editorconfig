@@ -7,3 +7,7 @@ insert_final_newline = true
 # attributes always go on their own line
 resharper_place_accessorholder_attribute_on_same_line = never
 resharper_place_field_attribute_on_same_line = never
+
+# omit access modifiers that match the default (private members, internal top-level types)
+dotnet_style_require_accessibility_modifiers = omit_if_default
+dotnet_diagnostic.IDE0040.severity = warning

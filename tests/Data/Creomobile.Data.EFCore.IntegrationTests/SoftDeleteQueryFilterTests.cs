@@ -5,7 +5,7 @@ namespace Creomobile.Data.EFCore.IntegrationTests;
 
 public sealed class SoftDeleteQueryFilterTests(PostgresFixture postgresFixture)
 {
-    private const string Database = "soft_delete_tests";
+    const string Database = "soft_delete_tests";
 
     [Fact]
     public async Task SoftDeletedEntitiesAreHiddenFromQueries()
@@ -115,7 +115,7 @@ public sealed class SoftDeleteQueryFilterTests(PostgresFixture postgresFixture)
         }
     }
 
-    private async Task<TimestampsTestContext> CreateContextAsync(CancellationToken cancellationToken)
+    async Task<TimestampsTestContext> CreateContextAsync(CancellationToken cancellationToken)
     {
         var options = new DbContextOptionsBuilder<TimestampsTestContext>()
             .UseNpgsql(TestDatabase.ConnectionString(postgresFixture, Database))
@@ -127,7 +127,7 @@ public sealed class SoftDeleteQueryFilterTests(PostgresFixture postgresFixture)
         return context;
     }
 
-    private async Task<int> InsertAndSoftDeleteAsync(CancellationToken cancellationToken)
+    async Task<int> InsertAndSoftDeleteAsync(CancellationToken cancellationToken)
     {
         int id;
         await using (var context = await CreateContextAsync(cancellationToken))

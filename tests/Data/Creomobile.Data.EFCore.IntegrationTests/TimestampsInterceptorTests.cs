@@ -5,7 +5,7 @@ namespace Creomobile.Data.EFCore.IntegrationTests;
 
 public sealed class TimestampsInterceptorTests(PostgresFixture postgresFixture)
 {
-    private const string Database = "timestamps_tests";
+    const string Database = "timestamps_tests";
 
     [Fact]
     public async Task InsertStampsCreatedAtAndUpdatedAtWithSameUtcInstant()
@@ -158,6 +158,10 @@ public sealed class TimestampsInterceptorTests(PostgresFixture postgresFixture)
             entity.CreatedAt = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             entity.Payload = "tampered";
             await context.SaveChangesAsync(cancellationToken);
+
+            // The in-memory value is restored too — the tracked entity must not
+            // keep the rejected value and disagree with the database.
+            entity.CreatedAt.Should().Be(original.CreatedAt);
         }
 
         var updated = await LoadAsync(id, cancellationToken);
@@ -170,20 +174,11 @@ public sealed class TimestampsInterceptorTests(PostgresFixture postgresFixture)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var id = await InsertAsync("victim", cancellationToken);
+        await SoftDeleteAsync(id, cancellationToken);
 
-        await using (var context = await CreateContextAsync(cancellationToken))
-        {
-            var entity = await context.TimestampedEntities.SingleAsync(e => e.Id == id, cancellationToken);
-            context.Remove(entity);
-            await context.SaveChangesAsync(cancellationToken);
-        }
+        (await CountRowsAsync("TimestampedEntities", id, cancellationToken)).Should().Be(1);
 
-        var connectionString = TestDatabase.ConnectionString(postgresFixture, Database);
-        var rows = await TestDatabase.CountRowsAsync(
-            connectionString, "TimestampedEntities", "Id", id, cancellationToken);
-        rows.Should().Be(1);
-
-        var deleted = await LoadAsync(id, cancellationToken, ignoreQueryFilters: true);
+        var deleted = await LoadDeletedAsync(id, cancellationToken);
         deleted.DeletedAt.Should().NotBeNull();
         deleted.UpdatedAt.Should().Be(deleted.DeletedAt!.Value);
     }
@@ -193,13 +188,7 @@ public sealed class TimestampsInterceptorTests(PostgresFixture postgresFixture)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var id = await InsertAsync("phoenix", cancellationToken);
-
-        await using (var context = await CreateContextAsync(cancellationToken))
-        {
-            var entity = await context.TimestampedEntities.SingleAsync(e => e.Id == id, cancellationToken);
-            context.Remove(entity);
-            await context.SaveChangesAsync(cancellationToken);
-        }
+        await SoftDeleteAsync(id, cancellationToken);
 
         await using (var context = await CreateContextAsync(cancellationToken))
         {
@@ -219,19 +208,13 @@ public sealed class TimestampsInterceptorTests(PostgresFixture postgresFixture)
     public async Task SoftDeleteKeepsOwnedData()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        int id;
-        await using (var context = await CreateContextAsync(cancellationToken))
+        var inserted = await InsertAsync(new SoftDeleteOwner
         {
-            var owner = new SoftDeleteOwner
-            {
-                Title = "aggregate",
-                Details = new OwnedDetails { City = "Lisbon" },
-                Tags = [new OwnedTag { Label = "keep" }, new OwnedTag { Label = "me" }],
-            };
-            context.Add(owner);
-            await context.SaveChangesAsync(cancellationToken);
-            id = owner.Id;
-        }
+            Title = "aggregate",
+            Details = new OwnedDetails { City = "Lisbon" },
+            Tags = [new OwnedTag { Label = "keep" }, new OwnedTag { Label = "me" }],
+        }, cancellationToken);
+        var id = inserted.Id;
 
         await using (var context = await CreateContextAsync(cancellationToken))
         {
@@ -240,10 +223,7 @@ public sealed class TimestampsInterceptorTests(PostgresFixture postgresFixture)
             await context.SaveChangesAsync(cancellationToken);
         }
 
-        var connectionString = TestDatabase.ConnectionString(postgresFixture, Database);
-        var rows = await TestDatabase.CountRowsAsync(
-            connectionString, "SoftDeleteOwners", "Id", id, cancellationToken);
-        rows.Should().Be(1);
+        (await CountRowsAsync("SoftDeleteOwners", id, cancellationToken)).Should().Be(1);
 
         await using (var context = await CreateContextAsync(cancellationToken))
         {
@@ -263,14 +243,8 @@ public sealed class TimestampsInterceptorTests(PostgresFixture postgresFixture)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var preset = new DateTime(2020, 1, 2, 3, 4, 5, DateTimeKind.Utc);
-        int id;
-        await using (var context = await CreateContextAsync(cancellationToken))
-        {
-            var lookalike = new StampsLookalike { CreatedAt = preset, UpdatedAt = preset };
-            context.Add(lookalike);
-            await context.SaveChangesAsync(cancellationToken);
-            id = lookalike.Id;
-        }
+        var id = (await InsertAsync(
+            new StampsLookalike { CreatedAt = preset, UpdatedAt = preset }, cancellationToken)).Id;
 
         await using (var context = await CreateContextAsync(cancellationToken))
         {
@@ -292,10 +266,7 @@ public sealed class TimestampsInterceptorTests(PostgresFixture postgresFixture)
             await context.SaveChangesAsync(cancellationToken);
         }
 
-        var connectionString = TestDatabase.ConnectionString(postgresFixture, Database);
-        var rows = await TestDatabase.CountRowsAsync(
-            connectionString, "StampsLookalikes", "Id", id, cancellationToken);
-        rows.Should().Be(0);
+        (await CountRowsAsync("StampsLookalikes", id, cancellationToken)).Should().Be(0);
     }
 
     [Fact]
@@ -329,6 +300,7 @@ public sealed class TimestampsInterceptorTests(PostgresFixture postgresFixture)
         {
             var entity = new TimestampedEntity { Payload = "sync" };
             context.Add(entity);
+            // ReSharper disable once MethodHasAsyncOverloadWithCancellation
             context.SaveChanges();
             id = entity.Id;
         }
@@ -370,18 +342,11 @@ public sealed class TimestampsInterceptorTests(PostgresFixture postgresFixture)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
 
-        int parentId;
-        await using (var context = await CreateContextAsync(cancellationToken))
+        var parentId = (await InsertAsync(new CascadeParent
         {
-            var parent = new CascadeParent
-            {
-                Label = "parent",
-                Children = [new CascadeChild { Label = "child" }],
-            };
-            context.Add(parent);
-            await context.SaveChangesAsync(cancellationToken);
-            parentId = parent.Id;
-        }
+            Label = "parent",
+            Children = [new CascadeChild { Label = "child" }],
+        }, cancellationToken)).Id;
 
         await using (var context = await CreateContextAsync(cancellationToken))
         {
@@ -394,10 +359,7 @@ public sealed class TimestampsInterceptorTests(PostgresFixture postgresFixture)
 
         // The parent is retained (soft delete), a regular — not owned — child
         // follows the normal cascade and is physically gone.
-        var connectionString = TestDatabase.ConnectionString(postgresFixture, Database);
-        var parentRows = await TestDatabase.CountRowsAsync(
-            connectionString, "CascadeParents", "Id", parentId, cancellationToken);
-        parentRows.Should().Be(1);
+        (await CountRowsAsync("CascadeParents", parentId, cancellationToken)).Should().Be(1);
 
         await using (var context = await CreateContextAsync(cancellationToken))
         {
@@ -405,7 +367,7 @@ public sealed class TimestampsInterceptorTests(PostgresFixture postgresFixture)
         }
     }
 
-    private async Task<TimestampsTestContext> CreateContextAsync(
+    async Task<TimestampsTestContext> CreateContextAsync(
         CancellationToken cancellationToken, TimeProvider? timeProvider = null)
     {
         var options = new DbContextOptionsBuilder<TimestampsTestContext>()
@@ -418,41 +380,60 @@ public sealed class TimestampsInterceptorTests(PostgresFixture postgresFixture)
         return context;
     }
 
-    private async Task<int> InsertAsync(string payload, CancellationToken cancellationToken)
+    async Task<T> InsertAsync<T>(T entity, CancellationToken cancellationToken) where T : class
     {
         await using var context = await CreateContextAsync(cancellationToken);
-        var entity = new TimestampedEntity { Payload = payload };
         context.Add(entity);
         await context.SaveChangesAsync(cancellationToken);
-        return entity.Id;
+        return entity;
     }
 
-    private async Task<TimestampedEntity> LoadAsync(
-        int id, CancellationToken cancellationToken, bool ignoreQueryFilters = false)
+    async Task<int> InsertAsync(string payload, CancellationToken cancellationToken)
+        => (await InsertAsync(new TimestampedEntity { Payload = payload }, cancellationToken)).Id;
+
+    async Task SoftDeleteAsync(int id, CancellationToken cancellationToken)
     {
         await using var context = await CreateContextAsync(cancellationToken);
-        var query = ignoreQueryFilters
-            ? context.TimestampedEntities.IgnoreQueryFilters()
-            : context.TimestampedEntities;
-        return await query.SingleAsync(e => e.Id == id, cancellationToken);
+        var entity = await context.TimestampedEntities.SingleAsync(e => e.Id == id, cancellationToken);
+        context.Remove(entity);
+        await context.SaveChangesAsync(cancellationToken);
     }
 
-    private sealed class MutableTimeProvider(DateTime utcNow) : TimeProvider
+    async Task<TimestampedEntity> LoadAsync(int id, CancellationToken cancellationToken)
+    {
+        await using var context = await CreateContextAsync(cancellationToken);
+        return await context.TimestampedEntities.SingleAsync(e => e.Id == id, cancellationToken);
+    }
+
+    async Task<TimestampedEntity> LoadDeletedAsync(int id, CancellationToken cancellationToken)
+    {
+        await using var context = await CreateContextAsync(cancellationToken);
+        return await context.TimestampedEntities
+            .IgnoreQueryFilters()
+            .SingleAsync(e => e.Id == id, cancellationToken);
+    }
+
+    Task<long> CountRowsAsync(string tableName, int id, CancellationToken cancellationToken)
+        => TestDatabase.CountRowsAsync(
+            TestDatabase.ConnectionString(postgresFixture, Database),
+            tableName, "Id", id, cancellationToken);
+
+    sealed class MutableTimeProvider(DateTime utcNow) : TimeProvider
     {
         public DateTime UtcNow { get; set; } = utcNow;
 
         public override DateTimeOffset GetUtcNow() => new(UtcNow);
     }
 
-    private sealed class TickingTimeProvider(DateTime startUtcNow) : TimeProvider
+    sealed class TickingTimeProvider(DateTime startUtcNow) : TimeProvider
     {
-        private DateTime _current = startUtcNow;
+        DateTime _current = startUtcNow;
 
         public override DateTimeOffset GetUtcNow()
         {
             var value = _current;
             _current = value.AddMinutes(1);
-            return new DateTimeOffset(value);
+            return new(value);
         }
     }
 }

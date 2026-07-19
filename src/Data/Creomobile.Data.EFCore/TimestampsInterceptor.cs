@@ -11,7 +11,7 @@ namespace Creomobile.Data.EFCore;
 /// <see cref="IDeletedAt" /> timestamps when saving changes. See
 /// <c>UseTimestamps</c> for the full semantics.
 /// </summary>
-internal sealed class TimestampsInterceptor(TimeProvider timeProvider) : SaveChangesInterceptor
+sealed class TimestampsInterceptor(TimeProvider timeProvider) : SaveChangesInterceptor
 {
     public override InterceptionResult<int> SavingChanges(
         DbContextEventData eventData,
@@ -30,7 +30,7 @@ internal sealed class TimestampsInterceptor(TimeProvider timeProvider) : SaveCha
         return base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
-    private void ApplyTimestamps(DbContext? context)
+    void ApplyTimestamps(DbContext? context)
     {
         if (context is null)
             return;
@@ -42,6 +42,7 @@ internal sealed class TimestampsInterceptor(TimeProvider timeProvider) : SaveCha
         // the state manager, which would invalidate the live enumeration.
         foreach (var entry in context.ChangeTracker.Entries().ToList())
         {
+            // ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
             switch (entry.State)
             {
                 case EntityState.Added:
@@ -78,30 +79,36 @@ internal sealed class TimestampsInterceptor(TimeProvider timeProvider) : SaveCha
     // Values are written through the tracked entry, not the CLR setter: DetectChanges
     // has already run by the time the interceptor is called, so a plain setter write
     // would not be picked up for the current save.
-    private static void StampUpdate(EntityEntry entry, DateTime now)
+    static void StampUpdate(EntityEntry entry, DateTime now)
     {
         if (entry.Entity is IUpdatedAt)
             entry.Property(nameof(IUpdatedAt.UpdatedAt)).CurrentValue = now;
 
-        if (entry.Entity is ICreatedAt)
-            entry.Property(nameof(ICreatedAt.CreatedAt)).IsModified = false;
+        if (entry.Entity is not ICreatedAt) return;
+
+        // Restore the value, not just suppress the write: otherwise the
+        // tracked entity would keep the rejected value in memory and
+        // disagree with the database until reloaded.
+        var createdAt = entry.Property(nameof(ICreatedAt.CreatedAt));
+        createdAt.CurrentValue = createdAt.OriginalValue;
+        createdAt.IsModified = false;
     }
 
     // Owned entities live inside the soft-deleted aggregate and must survive with
     // it: left Deleted, a table-split owned entry would null out its columns in
     // the owner's row, and a separately-tabled one would lose its rows.
-    private static void ResurrectOwnedEntries(EntityEntry entry)
+    static void ResurrectOwnedEntries(EntityEntry entry)
     {
         foreach (var navigationEntry in entry.Navigations)
         {
             if (navigationEntry.Metadata is not INavigation { ForeignKey.IsOwnership: true, IsOnDependent: false })
                 continue;
 
-            IEnumerable<object> targets = navigationEntry switch
+            var targets = navigationEntry switch
             {
                 CollectionEntry { CurrentValue: { } items } => items.Cast<object>(),
                 ReferenceEntry { CurrentValue: { } item } => [item],
-                _ => [],
+                _ => []
             };
 
             foreach (var target in targets)

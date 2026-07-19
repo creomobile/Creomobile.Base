@@ -1,7 +1,7 @@
 ﻿namespace Creomobile.Data.Abstractions;
 
 /// <summary>
-/// Abstraction for an entity exposing a strongly-typed primary key.
+/// Represents an entity with a strongly-typed primary key.
 /// </summary>
 /// <typeparam name="TId">Primary key type (e.g. <see cref="System.Guid"/>, <see cref="int"/>, <see cref="string"/>).</typeparam>
 public interface IEntityBase<TId> where TId : notnull

@@ -2,7 +2,7 @@ using Npgsql;
 
 namespace Creomobile.Data.EFCore.IntegrationTests;
 
-internal static class TestDatabase
+static class TestDatabase
 {
     public static string ConnectionString(PostgresFixture postgresFixture, string database)
         => new NpgsqlConnectionStringBuilder(postgresFixture.Container.GetConnectionString())

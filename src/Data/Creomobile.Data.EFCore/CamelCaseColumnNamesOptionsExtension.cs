@@ -5,11 +5,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Creomobile.Data.EFCore;
 
-internal sealed class CamelCaseColumnNamesOptionsExtension : IDbContextOptionsExtension
+sealed class CamelCaseColumnNamesOptionsExtension : IDbContextOptionsExtension
 {
-    private DbContextOptionsExtensionInfo? _info;
-
-    public DbContextOptionsExtensionInfo Info => _info ??= new ExtensionInfo(this);
+    public DbContextOptionsExtensionInfo Info => field ??= new ExtensionInfo(this);
 
     public void ApplyServices(IServiceCollection services)
         => new EntityFrameworkRelationalServicesBuilder(services)
@@ -19,7 +17,7 @@ internal sealed class CamelCaseColumnNamesOptionsExtension : IDbContextOptionsEx
     {
     }
 
-    private sealed class ExtensionInfo(IDbContextOptionsExtension extension)
+    sealed class ExtensionInfo(IDbContextOptionsExtension extension)
         : DbContextOptionsExtensionInfo(extension)
     {
         public override bool IsDatabaseProvider => false;
@@ -36,7 +34,7 @@ internal sealed class CamelCaseColumnNamesOptionsExtension : IDbContextOptionsEx
     }
 }
 
-internal sealed class CamelCaseColumnNamesConventionSetPlugin : IConventionSetPlugin
+sealed class CamelCaseColumnNamesConventionSetPlugin : IConventionSetPlugin
 {
     public ConventionSet ModifyConventions(ConventionSet conventionSet)
     {

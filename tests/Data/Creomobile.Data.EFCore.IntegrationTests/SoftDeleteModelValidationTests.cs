@@ -10,6 +10,7 @@ public sealed class SoftDeleteModelValidationTests(PostgresFixture postgresFixtu
     {
         using var context = new InvalidHierarchyContext(CreateOptions<InvalidHierarchyContext>());
 
+        // ReSharper disable once AccessToDisposedClosure
         var act = () => _ = context.Model;
 
         act.Should().Throw<InvalidOperationException>()
@@ -21,6 +22,7 @@ public sealed class SoftDeleteModelValidationTests(PostgresFixture postgresFixtu
     {
         using var context = new UnmappedDeletedAtContext(CreateOptions<UnmappedDeletedAtContext>());
 
+        // ReSharper disable once AccessToDisposedClosure
         var act = () => _ = context.Model;
 
         act.Should().Throw<InvalidOperationException>()
@@ -28,7 +30,7 @@ public sealed class SoftDeleteModelValidationTests(PostgresFixture postgresFixtu
     }
 
     // Model building never opens a connection — the database stays untouched.
-    private DbContextOptions<TContext> CreateOptions<TContext>()
+    DbContextOptions<TContext> CreateOptions<TContext>()
         where TContext : DbContext
         => new DbContextOptionsBuilder<TContext>()
             .UseNpgsql(TestDatabase.ConnectionString(postgresFixture, "model_validation_tests"))

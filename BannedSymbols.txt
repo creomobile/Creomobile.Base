@@ -1,0 +1,3 @@
+P:System.DateTime.Now;Use DateTime.UtcNow (or TimeProvider) — UTC-only policy, see Creomobile.Data.Abstractions timestamp interfaces
+P:System.DateTime.Today;Use DateOnly.FromDateTime(DateTime.UtcNow) or TimeProvider — UTC-only policy
+P:System.DateTimeOffset.Now;Use DateTimeOffset.UtcNow (or TimeProvider) — UTC-only policy

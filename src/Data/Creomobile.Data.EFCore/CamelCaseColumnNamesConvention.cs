@@ -16,9 +16,11 @@ namespace Creomobile.Data.EFCore;
 /// <remarks>
 /// Known limitations: TPC inheritance and entity splitting are not fully
 /// covered — properties mapped outside the entity type's primary table keep
-/// their default names. The convention runs as a model-finalizing convention
-/// after the built-in ones; its order relative to other convention-set plugins
-/// follows the plugin registration order.
+/// their default names. Same-named properties on TPH sibling types are
+/// uniquified by EF (<c>Type_Property</c>) after conventions run, so those
+/// uniquified names escape camelCasing. The convention runs as a
+/// model-finalizing convention after the built-in ones; its order relative
+/// to other convention-set plugins follows the plugin registration order.
 /// </remarks>
 public sealed class CamelCaseColumnNamesConvention : IModelFinalizingConvention
 {
@@ -31,42 +33,27 @@ public sealed class CamelCaseColumnNamesConvention : IModelFinalizingConvention
         // types sharing the owner's table). Renaming one side alone would leave
         // the shared column with mismatched names and fail model validation, so
         // properties are grouped per (table, column) and renamed as a unit.
-        var columns = new Dictionary<(StoreObjectIdentifier Table, string Column), List<IConventionProperty>>();
+        // ToList keeps the phases strictly separate: all names are read before
+        // the first rename is applied.
+        var renames = (
+            from entityType in modelBuilder.Metadata.GetEntityTypes()
+            let table = StoreObjectIdentifier.Create(entityType, StoreObjectType.Table)
+            where table is not null
+            from property in entityType.GetDeclaredProperties()
+            let columnName = property.GetColumnName(table.Value)
+            where columnName is not null
+            group property by (Table: table.Value, Column: columnName) into sharers
+            where !sharers.Any(p => IsExplicitlyNamed(p, sharers.Key.Table))
+            let camelCaseName = JsonNamingPolicy.CamelCase.ConvertName(sharers.Key.Column)
+            where camelCaseName != sharers.Key.Column
+            from property in sharers
+            select (property, camelCaseName)).ToList();
 
-        foreach (var entityType in modelBuilder.Metadata.GetEntityTypes())
-        {
-            var table = StoreObjectIdentifier.Create(entityType, StoreObjectType.Table);
-            if (table is null)
-                continue;
-
-            foreach (var property in entityType.GetDeclaredProperties())
-            {
-                var columnName = property.GetColumnName(table.Value);
-                if (columnName is null)
-                    continue;
-
-                var key = (table.Value, columnName);
-                if (!columns.TryGetValue(key, out var group))
-                    columns[key] = group = [];
-                group.Add(property);
-            }
-        }
-
-        foreach (var ((table, columnName), properties) in columns)
-        {
-            if (properties.Any(p => IsExplicitlyNamed(p, table)))
-                continue;
-
-            var camelCaseName = JsonNamingPolicy.CamelCase.ConvertName(columnName);
-            if (camelCaseName == columnName)
-                continue;
-
-            foreach (var property in properties)
-                property.Builder.HasColumnName(camelCaseName);
-        }
+        foreach (var (property, camelCaseName) in renames)
+            property.Builder.HasColumnName(camelCaseName);
     }
 
-    private static bool IsExplicitlyNamed(IConventionProperty property, in StoreObjectIdentifier table)
+    static bool IsExplicitlyNamed(IConventionProperty property, in StoreObjectIdentifier table)
     {
         // Only developer-made choices are protected; a name supplied by another
         // convention is still eligible for camelCasing.

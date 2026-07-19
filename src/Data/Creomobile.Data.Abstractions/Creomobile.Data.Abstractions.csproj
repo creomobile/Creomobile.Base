@@ -1,6 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<Version>0.0.3</Version>
-		<Description>Core abstractions for Creomobile data models</Description>
+		<Description>Core abstractions for data models: entity base types and timestamp contracts</Description>
+		<PackageTags>creomobile;data;abstractions;entities;timestamps</PackageTags>
+		<IsAotCompatible>true</IsAotCompatible>
+		<PackageValidationBaselineVersion>0.0.3</PackageValidationBaselineVersion>
 	</PropertyGroup>
 </Project>
