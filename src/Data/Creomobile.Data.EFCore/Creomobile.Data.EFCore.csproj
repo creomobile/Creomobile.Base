@@ -1,6 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<Version>0.0.1</Version>
 		<Description>Opinionated EF Core extensions: camelCase column naming, automatic timestamps and soft delete</Description>
 		<PackageTags>creomobile;efcore;entity-framework;conventions;camelcase;timestamps;soft-delete</PackageTags>
 	</PropertyGroup>

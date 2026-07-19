@@ -2,6 +2,8 @@
 	<Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 	
 	<PropertyGroup>
+		<!-- Packages of this repo version in lockstep; bump here for a release. -->
+		<Version>0.1.0</Version>
 		<Deterministic>true</Deterministic>
 		<ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
 		<Authors>Andrii Glushko</Authors>
