@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<!-- tests/Directory.Build.props targets xunit executables; this one is a shared library. -->
+		<OutputType>Library</OutputType>
+		<IsTestProject>false</IsTestProject>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+		<PackageReference Include="Testcontainers.PostgreSql" />
+		<PackageReference Include="Testcontainers.XunitV3" />
+	</ItemGroup>
+</Project>

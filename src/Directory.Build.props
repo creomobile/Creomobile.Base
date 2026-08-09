@@ -3,7 +3,7 @@
 	
 	<PropertyGroup>
 		<!-- Packages of this repo version in lockstep; bump here for a release. -->
-		<Version>0.1.0</Version>
+		<Version>0.2.0</Version>
 		<!-- Last published version; bump after each release. A new, not yet
 		     published package must clear this property in its csproj. -->
 		<PackageValidationBaselineVersion>0.1.0</PackageValidationBaselineVersion>

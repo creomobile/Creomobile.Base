@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<ItemGroup>
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\src\Data\Creomobile.Data.EFCore.Timestamps\Creomobile.Data.EFCore.Timestamps.csproj" />
+		<!-- CombinedConventionsTests exercises both aspects together. -->
+		<ProjectReference Include="..\..\..\src\Data\Creomobile.Data.EFCore.CamelCaseColumns\Creomobile.Data.EFCore.CamelCaseColumns.csproj" />
+		<ProjectReference Include="..\Creomobile.Data.EFCore.TestSupport\Creomobile.Data.EFCore.TestSupport.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<Using Include="Creomobile.Data.EFCore.TestSupport" />
+	</ItemGroup>
+</Project>
