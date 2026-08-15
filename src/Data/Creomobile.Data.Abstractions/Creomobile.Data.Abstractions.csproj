@@ -3,5 +3,18 @@
 		<Description>Core abstractions for data models: entity base types and timestamp contracts</Description>
 		<PackageTags>creomobile;data;abstractions;entities;timestamps</PackageTags>
 		<IsAotCompatible>true</IsAotCompatible>
+		<!-- The only package here that reaches below .NET 10, and the only one that can:
+		     it is interfaces and one base class with no package dependencies at all, so
+		     nothing forces the newer runtime. The three EF packages stay on net10.0
+		     because EF Core 10 puts them there.
+
+		     The singular TargetFramework is cleared on purpose. The repo root sets it, and
+		     when a project defines both, the singular one wins and the second framework is
+		     built silently never.
+
+		     Adding a framework is a quiet change; REMOVING one breaks every consumer that
+		     took it up. Treat this line as a promise, not a setting. -->
+		<TargetFramework></TargetFramework>
+		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
 	</PropertyGroup>
 </Project>

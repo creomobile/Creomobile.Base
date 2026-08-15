@@ -16,7 +16,8 @@ using Xunit.Sdk;
 
 [assembly: AssemblyFixture(typeof(PostgresAssemblyFixture))]
 
-public sealed class PostgresAssemblyFixture() : PostgresFixture("postgres:18.4");
+public sealed class PostgresAssemblyFixture() : PostgresFixture(
+    "postgres:18.4@sha256:<the digest of the image your production runs>");
 ```
 
 Then take **your** fixture type as a constructor parameter in any test class:
@@ -57,9 +58,22 @@ code — a shared library choosing it for you is how tests and production drift 
 anyone deciding to. The argument is a full image reference, so a mirror or a private registry
 can be named too.
 
-**Prefer an exact tag over a floating major.** `postgres:18` looks tidier, but it moves:
-the same commit then runs one server on a developer's machine, whose cache is weeks old, and
-a different one in CI. A red test should mean a code change.
+**Pin by digest, not by tag.** A tag is a name, and a name can be re-published against a
+different image; a digest is the image's content fingerprint and cannot be moved. So even an
+exact patch tag leaves "the same commit ran the same server" resting on nobody having moved
+it. A floating major like `postgres:18` is worse — it is *meant* to move, and Docker will not
+re-pull a tag it already has, so a developer's weeks-old cache and a fresh machine disagree
+silently. A red test should mean a code change.
+
+Read the digest of the image your production runs with:
+
+```bash
+docker pull postgres:18.4
+docker inspect --format='{{index .RepoDigests 0}}' postgres:18.4
+```
+
+Keeping the tag in front of the digest costs nothing and keeps the line readable; only the
+digest binds.
 
 ## What it does and does not do
 
@@ -76,6 +90,14 @@ length of one test assembly, so they carry no decision worth restating per repos
 
 `Container` is exposed for everything this fixture does not wrap — running a script,
 reading logs. It is disposed by the fixture; never dispose it from a test.
+
+**Using it couples you to Testcontainers, and that is deliberate.** The property hands
+back that library's own type rather than something of ours, so a major version of
+Testcontainers is a breaking change for code that touches it — where code that stays on
+`GetConnectionString` is unaffected. The alternative was a set of narrow wrappers for
+needs nobody has demonstrated yet; an escape hatch you can see is better than one
+guessed at in advance. If you find yourself needing something specific through it,
+that is worth telling us: a named operation can then replace the raw handle.
 
 ## Requirements
 

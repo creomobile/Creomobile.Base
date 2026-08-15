@@ -13,4 +13,14 @@
 		<PackageReference Include="Testcontainers.PostgreSql" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
 	</ItemGroup>
+
+	<ItemGroup>
+		<!-- The one package in this repository whose tests need an internal: they cover
+		     XunitDiagnosticLogger, which is the piece that carries a failed container's
+		     explanation out to the test output. Declared here rather than repo-wide, so
+		     the grant names a package that actually uses it. -->
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+			<_Parameter1>$(AssemblyName).IntegrationTests</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
 </Project>

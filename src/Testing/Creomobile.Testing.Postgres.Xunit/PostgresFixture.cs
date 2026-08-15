@@ -15,15 +15,23 @@ namespace Creomobile.Testing.Postgres;
 /// consequence is one container per test assembly, which test classes then share by taking
 /// the derived type as a constructor parameter.
 /// <code>
-/// public sealed class PostgresAssemblyFixture() : PostgresFixture("postgres:18.4");
+/// public sealed class PostgresAssemblyFixture() : PostgresFixture(
+///     "postgres:18.4@sha256:&lt;the digest of the image your production runs&gt;");
 /// </code>
 /// <para>
 /// This package has no default image and never picks one for you: which database version a
 /// repository tests against is that repository's statement about the production it targets,
-/// and a shared library has no business choosing it. Name an exact patch, as above — a
-/// major-only tag such as <c>postgres:18</c> moves under the tests, and Docker will not
-/// re-pull a tag it already has, so the same commit can run different servers on a laptop
-/// and in CI.
+/// and a shared library has no business choosing it. The digest above is a placeholder for
+/// yours — read it with <c>docker inspect --format='{{index .RepoDigests 0}}' postgres:18.4</c>
+/// after pulling the image your production runs.
+/// </para>
+/// <para>
+/// Pin by digest rather than by tag. A tag is a name and can be re-published against a
+/// different image, so an exact patch tag still leaves "the same commit ran the same server"
+/// resting on nobody having moved it; a digest is the image's content fingerprint and cannot
+/// be moved. A major-only tag such as <c>postgres:18</c> is worse again — it is meant to move,
+/// and Docker will not re-pull a tag it already has, so one machine can sit on a months-old
+/// copy while another gets today's.
 /// </para>
 /// <para>
 /// The fixture starts a database server; it does not create databases. Use
@@ -44,8 +52,10 @@ public abstract class PostgresFixture : IAsyncLifetime
 
     /// <summary>Builds the container. Starting it is <see cref="InitializeAsync"/>'s job.</summary>
     /// <param name="image">
-    /// The full image reference to run, such as <c>postgres:18.4</c> — registry and repository
-    /// included, so a mirror or a private registry can be named.
+    /// The full image reference to run — registry and repository included, so a mirror or a
+    /// private registry can be named. Prefer a digest, as in
+    /// <c>postgres:18.4@sha256:&lt;digest&gt;</c>: a tag can be re-published against a
+    /// different image, a digest cannot.
     /// </param>
     /// <exception cref="ArgumentException"><paramref name="image"/> is null, empty or whitespace.</exception>
     protected PostgresFixture(string image)

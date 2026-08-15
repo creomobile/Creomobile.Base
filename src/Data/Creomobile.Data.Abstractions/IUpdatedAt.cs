@@ -4,9 +4,9 @@
 /// Marks an entity whose last update instant should be automatically maintained on insert and update.
 /// </summary>
 /// <remarks>
-/// The interface itself carries no behavior: the timestamp is maintained by a
-/// persistence integration such as <c>UseTimestamps()</c> from
-/// Creomobile.Data.EFCore.
+/// The interface carries no behavior. It declares the contract; maintaining the
+/// value on insert and update is the job of whatever persistence layer
+/// recognizes it.
 /// </remarks>
 public interface IUpdatedAt
 {

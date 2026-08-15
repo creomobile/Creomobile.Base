@@ -4,9 +4,9 @@
 /// Marks an entity supporting soft deletion semantics. When deleted the entity is retained and a deletion timestamp is set.
 /// </summary>
 /// <remarks>
-/// The interface itself carries no behavior: soft deletion and query filtering
-/// are performed by a persistence integration such as <c>UseTimestamps()</c>
-/// from Creomobile.Data.EFCore.
+/// The interface carries no behavior. It declares the contract; performing the
+/// soft delete and keeping deleted entities out of queries is the job of
+/// whatever persistence layer recognizes it.
 /// </remarks>
 public interface IDeletedAt
 {

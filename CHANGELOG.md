@@ -7,6 +7,37 @@ others depend on has to be there for their dependency floor to resolve.
 
 Dates are release dates. Versions are the tags `<package-id-lowercase>/v<version>`.
 
+## 0.2.2 — 2026-08-16
+
+**Creomobile.Data.Abstractions now targets .NET 8 as well as .NET 10.** It is interfaces and
+one base class with no package dependencies, so nothing in it ever needed the newer runtime —
+the single target framework was inherited from the repository, not chosen. Projects on .NET 8
+can use it. The three EF packages stay on .NET 10, where EF Core 10 puts them.
+
+**Creomobile.Data.Abstractions — the documentation no longer names an implementation.** Its
+XML comments and README used to send you to a specific EF Core package for `UseTimestamps()`.
+A package of contracts pointing at its own implementation is a dependency inverted in prose,
+and it was pointing at a package that has since been split in two. The remarks now say what is
+true of the contract itself: implementing it does nothing on its own, and the persistence layer
+you use is what gives it effect.
+
+**Creomobile.Testing.Postgres.Xunit — the examples pin the image by digest.** A tag is a name
+and can be republished against a different image; a digest is the image's content fingerprint
+and cannot be moved, so it is what makes "the same commit ran the same server" true. The
+examples show the shape, not our digest — read your own from the image your production runs.
+The README also now states plainly that `Container` hands back a Testcontainers type on
+purpose, so a major version of that library is a breaking change for code which touches it,
+while code that stays on `GetConnectionString` is unaffected.
+
+**All packages — `InternalsVisibleTo` is no longer granted repo-wide.** It used to open every
+package to `<assembly>.UnitTests` and `<assembly>.IntegrationTests`, including three packages
+with no internals a test uses and one naming convention no assembly here has ever used. Only
+`Creomobile.Testing.Postgres.Xunit` grants it now, to its own test assembly.
+
+**Creomobile.Data.EFCore.CamelCaseColumns**, **Creomobile.Data.EFCore.Timestamps** — no change.
+Republished at the lockstep version; `…Timestamps` requires `Creomobile.Data.Abstractions` at
+`>= 0.2.2`.
+
 ## 0.2.1 — 2026-08-15
 
 **Creomobile.Testing.Postgres.Xunit — first release.** A PostgreSQL container for xunit

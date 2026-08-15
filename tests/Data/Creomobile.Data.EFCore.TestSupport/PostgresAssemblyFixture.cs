@@ -3,16 +3,14 @@ using Creomobile.Testing.Postgres;
 namespace Creomobile.Data.EFCore.TestSupport;
 
 /// <summary>
-/// The image this repository's tests run against: the exact patch production is running, not a
-/// floating major.
+/// The image this repository's tests run against: the image production runs, pinned by digest.
 /// </summary>
 /// <remarks>
-/// A major-only tag looks more honest — the major is what we declare to the managed provider,
-/// and the patch is applied by it — but it moves under the tests. Verified on 2026-08-15:
-/// <c>postgres:18</c> resolved to 18.4 on this machine from a July cache while the registry had
-/// already moved that tag on, so the same commit would have run a different server in CI. The
-/// exact tag is what makes a red test mean a code change. It follows production's current patch
-/// and is refreshed deliberately, the same way the local development database is.
+/// A tag is a name and can be moved to another image; a digest is the image's content
+/// fingerprint and cannot. That is the whole reason the digest is here — an exact patch tag
+/// still leaves "the same commit ran the same server" resting on nobody having re-published
+/// it. The tag is kept alongside so the line stays readable; only the digest binds. Refreshed
+/// deliberately when production moves, the same way the local development database is.
 /// <para>
 /// Each test assembly still registers this itself with
 /// <c>[assembly: AssemblyFixture(typeof(PostgresAssemblyFixture))]</c> — an assembly-level
@@ -21,4 +19,5 @@ namespace Creomobile.Data.EFCore.TestSupport;
 /// xUnit1041 does not recognise it as a fixture source, and warnings are errors here.
 /// </para>
 /// </remarks>
-public sealed class PostgresAssemblyFixture() : PostgresFixture("postgres:18.4");
+public sealed class PostgresAssemblyFixture() : PostgresFixture(
+    "postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636");

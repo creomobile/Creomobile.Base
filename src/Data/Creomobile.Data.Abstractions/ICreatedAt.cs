@@ -4,9 +4,8 @@
 /// Marks an entity whose creation instant should be automatically populated on insert.
 /// </summary>
 /// <remarks>
-/// The interface itself carries no behavior: the timestamp is populated by a
-/// persistence integration such as <c>UseTimestamps()</c> from
-/// Creomobile.Data.EFCore.
+/// The interface carries no behavior. It declares the contract; populating the
+/// value on insert is the job of whatever persistence layer recognizes it.
 /// </remarks>
 public interface ICreatedAt
 {

@@ -3,7 +3,7 @@
 	
 	<PropertyGroup>
 		<!-- Packages of this repo version in lockstep; bump here for a release. -->
-		<Version>0.2.1</Version>
+		<Version>0.2.2</Version>
 		<!-- Last published version; bump after each release. A new, not yet
 		     published package must clear this property in its csproj. -->
 		<PackageValidationBaselineVersion>0.2.1</PackageValidationBaselineVersion>
@@ -25,7 +25,6 @@
 		<PackageProjectUrl>https://github.com/creomobile/Creomobile.Base</PackageProjectUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<PackageTags>creomobile;platform</PackageTags>
 		<EnablePackageValidation>true</EnablePackageValidation>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -38,11 +37,14 @@
 		<None Include="$(RepoRoot)Logo.png"
 			  Pack="true"
 			  PackagePath=""/>
-		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-			<_Parameter1>$(AssemblyName).UnitTests</_Parameter1>
-		</AssemblyAttribute>
-		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-			<_Parameter1>$(AssemblyName).IntegrationTests</_Parameter1>
-		</AssemblyAttribute>
 	</ItemGroup>
+
+	<!-- Deliberately no repo-wide InternalsVisibleTo. It used to grant
+	     $(AssemblyName).UnitTests and $(AssemblyName).IntegrationTests to every package,
+	     including the three that have no internal surface a test touches and the one
+	     naming convention that no assembly in this repository has ever used. A package
+	     that opens itself to a name nobody holds is an invitation with no addressee, and
+	     it travels inside the shipped assembly. Where a test genuinely needs an internal,
+	     the package says so itself. -->
+
 </Project>

@@ -6,6 +6,18 @@
 		<Nullable>enable</Nullable>
 		<AnalysisLevel>latest-recommended</AnalysisLevel>
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+		<!-- Here rather than in src/ and tests/ separately: those two cover every project
+		     that exists today, so the result is unchanged — but the next category of
+		     project would have started outside the rule without anyone deciding that. -->
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<!-- Central Package Management pins the versions this code names; it says nothing
+		     about what those packages drag in. The lock file records the whole graph, so
+		     "the tests were green" names a specific set of libraries rather than whatever
+		     resolved that day. It fixes how WE build and test; what the packages publish
+		     stays a lower bound, and this file must never become exact ranges in a nuspec.
+		     (No double hyphen anywhere in this comment: XML forbids it inside a comment,
+		     and MSBuild answers a broken props file by losing every property in it.) -->
+		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 	</PropertyGroup>
 
 	<ItemGroup>

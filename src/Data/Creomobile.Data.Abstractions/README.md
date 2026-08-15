@@ -13,11 +13,16 @@ Provides base interfaces and classes for defining strongly-typed, persistable en
 - **`IDeletedAt`** — declares a nullable UTC deletion timestamp (soft delete).
 - **`ITimestamps`** — combines `ICreatedAt`, `IUpdatedAt` and `IDeletedAt`.
 
-The interfaces only declare the properties: automatic population and
-soft-delete filtering are provided by the `Creomobile.Data.EFCore` package
-(`UseTimestamps()`). All timestamps are UTC — values must have
-`DateTimeKind.Utc`.
+The interfaces only declare the properties. Populating them and keeping
+soft-deleted entities out of queries is the job of whatever persistence layer
+recognizes the contracts — this package deliberately names none, so that an
+entity model depending on it depends on no storage technology. All timestamps
+are UTC — values must have `DateTimeKind.Utc`.
 
 ## Requirements
 
-- .NET 10+
+- .NET 8 or .NET 10.
+
+This package has no dependencies of its own, so nothing here forces a recent runtime.
+The other Creomobile.Data packages target .NET 10 only, because the EF Core version
+they build on does.

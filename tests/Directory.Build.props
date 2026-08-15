@@ -4,7 +4,6 @@
 	<PropertyGroup>
 		<IsPackable>false</IsPackable>
 		<OutputType>Exe</OutputType>
-		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -15,6 +14,16 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="AwesomeAssertions" />
+
+		<!-- One config, linked into every test assembly, because xunit reads it from the
+		     assembly's own output directory and a per-project copy is a per-project chance
+		     to forget. It turns on diagnostic messages, which is where Testcontainers
+		     explains a container that refused to start — the README of our own
+		     Creomobile.Testing.Postgres.Xunit asks for exactly this, and until now neither
+		     repository did it, so the package's main diagnostic went to nobody. -->
+		<None Include="$(MSBuildThisFileDirectory)xunit.runner.json"
+		      Link="xunit.runner.json"
+		      CopyToOutputDirectory="PreserveNewest" />
 
 		<Using Include="Xunit" />
 		<Using Include="AwesomeAssertions" />
