@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Creomobile.Data.EFCore.Timestamps.IntegrationTests;
 
-public sealed class SoftDeleteModelValidationTests(PostgresFixture postgresFixture)
+public sealed class SoftDeleteModelValidationTests(PostgresAssemblyFixture postgresFixture)
 {
     [Fact]
     public void ImplementingIDeletedAtBelowHierarchyRootFailsModelBuilding()
@@ -33,7 +33,7 @@ public sealed class SoftDeleteModelValidationTests(PostgresFixture postgresFixtu
     DbContextOptions<TContext> CreateOptions<TContext>()
         where TContext : DbContext
         => new DbContextOptionsBuilder<TContext>()
-            .UseNpgsql(TestDatabase.ConnectionString(postgresFixture, "model_validation_tests"))
+            .UseNpgsql(postgresFixture.GetConnectionString("model_validation_tests"))
             .UseTimestamps()
             .Options;
 }

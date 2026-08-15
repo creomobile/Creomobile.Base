@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Creomobile.Data.EFCore.CamelCaseColumns.IntegrationTests;
 
-public sealed class CamelCaseColumnNamesConventionTests(PostgresFixture postgresFixture)
+public sealed class CamelCaseColumnNamesConventionTests(PostgresAssemblyFixture postgresFixture)
 {
     const string Database = "camel_case_tests";
 
@@ -62,7 +62,7 @@ public sealed class CamelCaseColumnNamesConventionTests(PostgresFixture postgres
 
     async Task<List<string>> GetColumnsAsync(string tableName, CancellationToken cancellationToken)
     {
-        var connectionString = TestDatabase.ConnectionString(postgresFixture, Database);
+        var connectionString = postgresFixture.GetConnectionString(Database);
 
         var options = new DbContextOptionsBuilder<CamelCaseTestContext>()
             .UseNpgsql(connectionString)

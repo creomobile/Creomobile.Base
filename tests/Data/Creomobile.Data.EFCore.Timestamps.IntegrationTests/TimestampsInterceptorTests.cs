@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Creomobile.Data.EFCore.Timestamps.IntegrationTests;
 
-public sealed class TimestampsInterceptorTests(PostgresFixture postgresFixture)
+public sealed class TimestampsInterceptorTests(PostgresAssemblyFixture postgresFixture)
 {
     const string Database = "timestamps_tests";
 
@@ -318,7 +318,7 @@ public sealed class TimestampsInterceptorTests(PostgresFixture postgresFixture)
         var secondInstant = firstInstant.AddYears(1);
 
         var options = new DbContextOptionsBuilder<TimestampsTestContext>()
-            .UseNpgsql(TestDatabase.ConnectionString(postgresFixture, Database))
+            .UseNpgsql(postgresFixture.GetConnectionString(Database))
             .UseTimestamps(new MutableTimeProvider(firstInstant))
             .UseTimestamps(new MutableTimeProvider(secondInstant))
             .Options;
@@ -371,7 +371,7 @@ public sealed class TimestampsInterceptorTests(PostgresFixture postgresFixture)
         CancellationToken cancellationToken, TimeProvider? timeProvider = null)
     {
         var options = new DbContextOptionsBuilder<TimestampsTestContext>()
-            .UseNpgsql(TestDatabase.ConnectionString(postgresFixture, Database))
+            .UseNpgsql(postgresFixture.GetConnectionString(Database))
             .UseTimestamps(timeProvider)
             .Options;
 
@@ -415,7 +415,7 @@ public sealed class TimestampsInterceptorTests(PostgresFixture postgresFixture)
 
     Task<long> CountRowsAsync(string tableName, int id, CancellationToken cancellationToken)
         => TestDatabase.CountRowsAsync(
-            TestDatabase.ConnectionString(postgresFixture, Database),
+            postgresFixture.GetConnectionString(Database),
             tableName, "Id", id, cancellationToken);
 
     sealed class MutableTimeProvider(DateTime utcNow) : TimeProvider

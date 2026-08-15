@@ -39,6 +39,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Creomobile.Data.EFCore.Came
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Creomobile.Data.EFCore.Timestamps.IntegrationTests", "tests\Data\Creomobile.Data.EFCore.Timestamps.IntegrationTests\Creomobile.Data.EFCore.Timestamps.IntegrationTests.csproj", "{948DA89F-875F-42BC-B51D-9F2C3E77ACFD}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Testing", "Testing", "{C663E1C4-F648-CE9F-03D6-0394E02F82F7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Creomobile.Testing.Postgres.Xunit", "src\Testing\Creomobile.Testing.Postgres.Xunit\Creomobile.Testing.Postgres.Xunit.csproj", "{7D64B8A5-FEAE-4C4B-91FF-23060D8F686E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{ED33C1A0-64DD-7F19-DF72-4B7367806335}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Creomobile.Testing.Postgres.Xunit.IntegrationTests", "tests\Testing\Creomobile.Testing.Postgres.Xunit.IntegrationTests\Creomobile.Testing.Postgres.Xunit.IntegrationTests.csproj", "{D066F7A3-A349-4556-AD59-940CF93DEEAE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -121,6 +129,30 @@ Global
 		{948DA89F-875F-42BC-B51D-9F2C3E77ACFD}.Release|x64.Build.0 = Release|Any CPU
 		{948DA89F-875F-42BC-B51D-9F2C3E77ACFD}.Release|x86.ActiveCfg = Release|Any CPU
 		{948DA89F-875F-42BC-B51D-9F2C3E77ACFD}.Release|x86.Build.0 = Release|Any CPU
+		{7D64B8A5-FEAE-4C4B-91FF-23060D8F686E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D64B8A5-FEAE-4C4B-91FF-23060D8F686E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D64B8A5-FEAE-4C4B-91FF-23060D8F686E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7D64B8A5-FEAE-4C4B-91FF-23060D8F686E}.Debug|x64.Build.0 = Debug|Any CPU
+		{7D64B8A5-FEAE-4C4B-91FF-23060D8F686E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7D64B8A5-FEAE-4C4B-91FF-23060D8F686E}.Debug|x86.Build.0 = Debug|Any CPU
+		{7D64B8A5-FEAE-4C4B-91FF-23060D8F686E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D64B8A5-FEAE-4C4B-91FF-23060D8F686E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D64B8A5-FEAE-4C4B-91FF-23060D8F686E}.Release|x64.ActiveCfg = Release|Any CPU
+		{7D64B8A5-FEAE-4C4B-91FF-23060D8F686E}.Release|x64.Build.0 = Release|Any CPU
+		{7D64B8A5-FEAE-4C4B-91FF-23060D8F686E}.Release|x86.ActiveCfg = Release|Any CPU
+		{7D64B8A5-FEAE-4C4B-91FF-23060D8F686E}.Release|x86.Build.0 = Release|Any CPU
+		{D066F7A3-A349-4556-AD59-940CF93DEEAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D066F7A3-A349-4556-AD59-940CF93DEEAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D066F7A3-A349-4556-AD59-940CF93DEEAE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D066F7A3-A349-4556-AD59-940CF93DEEAE}.Debug|x64.Build.0 = Debug|Any CPU
+		{D066F7A3-A349-4556-AD59-940CF93DEEAE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D066F7A3-A349-4556-AD59-940CF93DEEAE}.Debug|x86.Build.0 = Debug|Any CPU
+		{D066F7A3-A349-4556-AD59-940CF93DEEAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D066F7A3-A349-4556-AD59-940CF93DEEAE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D066F7A3-A349-4556-AD59-940CF93DEEAE}.Release|x64.ActiveCfg = Release|Any CPU
+		{D066F7A3-A349-4556-AD59-940CF93DEEAE}.Release|x64.Build.0 = Release|Any CPU
+		{D066F7A3-A349-4556-AD59-940CF93DEEAE}.Release|x86.ActiveCfg = Release|Any CPU
+		{D066F7A3-A349-4556-AD59-940CF93DEEAE}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -134,5 +166,9 @@ Global
 		{2C60E7D2-D781-4DB2-BF14-DB37B542035C} = {EDED54E2-5985-44BA-5061-D94B338C5818}
 		{6DBACC81-3034-452E-BBE4-60E4CCF9D0EF} = {EDED54E2-5985-44BA-5061-D94B338C5818}
 		{948DA89F-875F-42BC-B51D-9F2C3E77ACFD} = {EDED54E2-5985-44BA-5061-D94B338C5818}
+		{C663E1C4-F648-CE9F-03D6-0394E02F82F7} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{7D64B8A5-FEAE-4C4B-91FF-23060D8F686E} = {C663E1C4-F648-CE9F-03D6-0394E02F82F7}
+		{ED33C1A0-64DD-7F19-DF72-4B7367806335} = {C663E1C4-F648-CE9F-03D6-0394E02F82F7}
+		{D066F7A3-A349-4556-AD59-940CF93DEEAE} = {ED33C1A0-64DD-7F19-DF72-4B7367806335}
 	EndGlobalSection
 EndGlobal

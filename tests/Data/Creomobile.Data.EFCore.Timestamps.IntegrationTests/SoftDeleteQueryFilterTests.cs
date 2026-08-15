@@ -1,9 +1,10 @@
+using Creomobile.Data.Abstractions;
 using Creomobile.Data.EFCore.Timestamps.IntegrationTests.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Creomobile.Data.EFCore.Timestamps.IntegrationTests;
 
-public sealed class SoftDeleteQueryFilterTests(PostgresFixture postgresFixture)
+public sealed class SoftDeleteQueryFilterTests(PostgresAssemblyFixture postgresFixture)
 {
     const string Database = "soft_delete_tests";
 
@@ -115,10 +116,45 @@ public sealed class SoftDeleteQueryFilterTests(PostgresFixture postgresFixture)
         }
     }
 
+    // The filter binds to the mapped property, and that is not always a CLR member: an entity
+    // whose DeletedAt is an explicit interface implementation gets a shadow property, and the
+    // filter has to be built with EF.Property instead. Nothing else in this suite maps one, so
+    // without this test that branch of the convention ships unexecuted.
+    [Fact]
+    public async Task FiltersOnADeletedAtMappedAsAShadowProperty()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        int id;
+        await using (var context = await CreateContextAsync(cancellationToken))
+        {
+            var entity = new ShadowDeletedAtEntity { Payload = "shadow" };
+            context.Add(entity);
+            await context.SaveChangesAsync(cancellationToken);
+            id = entity.Id;
+
+            // No CLR property to assign — the value only exists in the change tracker.
+            context.Entry(entity).Property<DateTime?>(nameof(IDeletedAt.DeletedAt)).CurrentValue =
+                DateTime.UtcNow;
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
+        await using (var context = await CreateContextAsync(cancellationToken))
+        {
+            (await context.ShadowDeletedAtEntities.AnyAsync(e => e.Id == id, cancellationToken))
+                .Should().BeFalse();
+
+            (await context.ShadowDeletedAtEntities
+                    .IgnoreQueryFilters([SoftDeleteQueryFilterConvention.FilterKey])
+                    .AnyAsync(e => e.Id == id, cancellationToken))
+                .Should().BeTrue();
+        }
+    }
+
     async Task<TimestampsTestContext> CreateContextAsync(CancellationToken cancellationToken)
     {
         var options = new DbContextOptionsBuilder<TimestampsTestContext>()
-            .UseNpgsql(TestDatabase.ConnectionString(postgresFixture, Database))
+            .UseNpgsql(postgresFixture.GetConnectionString(Database))
             .UseTimestamps()
             .Options;
 

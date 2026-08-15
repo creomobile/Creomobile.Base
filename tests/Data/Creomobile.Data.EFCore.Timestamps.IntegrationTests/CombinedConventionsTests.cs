@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Creomobile.Data.EFCore.Timestamps.IntegrationTests;
 
-public sealed class CombinedConventionsTests(PostgresFixture postgresFixture)
+public sealed class CombinedConventionsTests(PostgresAssemblyFixture postgresFixture)
 {
     const string Database = "combined_tests";
 
@@ -11,7 +11,7 @@ public sealed class CombinedConventionsTests(PostgresFixture postgresFixture)
     public async Task CamelCaseAndTimestampsWorkTogether()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var connectionString = TestDatabase.ConnectionString(postgresFixture, Database);
+        var connectionString = postgresFixture.GetConnectionString(Database);
         var options = new DbContextOptionsBuilder<CombinedTestContext>()
             .UseNpgsql(connectionString)
             .UseCamelCaseColumnNames()

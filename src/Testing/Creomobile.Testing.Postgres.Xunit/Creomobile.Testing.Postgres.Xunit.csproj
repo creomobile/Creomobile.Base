@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<Description>Assembly fixture that runs a PostgreSQL container via Testcontainers for xunit integration tests, plus a connection-string helper for per-test-class databases. Works with xunit 3.2.x and 4.x, and pulls in no test runner.</Description>
+		<PackageTags>creomobile;testing;postgres;postgresql;testcontainers;xunit;integration-tests</PackageTags>
+		<!-- Not yet published: there is no baseline version to validate against.
+		     Remove this line after the first release. -->
+		<PackageValidationBaselineVersion></PackageValidationBaselineVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- xunit.v3.extensibility.core, not xunit.v3: the latter carries the runner, and
+		     from 4.0.0 also Microsoft Testing Platform. A library must not pick a runner
+		     for its consumers. The version is a floor — a consumer on xunit 4 resolves
+		     4.0.0, which is why this package only uses APIs identical in both lines. -->
+		<PackageReference Include="xunit.v3.extensibility.core" />
+		<PackageReference Include="Testcontainers.PostgreSql" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+	</ItemGroup>
+</Project>

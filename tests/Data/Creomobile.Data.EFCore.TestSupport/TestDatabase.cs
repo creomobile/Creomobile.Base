@@ -2,14 +2,11 @@ using Npgsql;
 
 namespace Creomobile.Data.EFCore.TestSupport;
 
+// Raw-SQL assertions specific to these suites. Addressing a database is not here: that is
+// PostgresFixture.GetConnectionString, and it lives in the package precisely because it was
+// the one piece two repositories had copied verbatim.
 public static class TestDatabase
 {
-    public static string ConnectionString(PostgresFixture postgresFixture, string database)
-        => new NpgsqlConnectionStringBuilder(postgresFixture.Container.GetConnectionString())
-        {
-            Database = database,
-        }.ConnectionString;
-
     public static async Task<List<string>> GetTableColumnsAsync(
         string connectionString, string tableName, CancellationToken cancellationToken)
     {

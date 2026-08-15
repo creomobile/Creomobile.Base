@@ -3,11 +3,21 @@
 		<!-- tests/Directory.Build.props targets xunit executables; this one is a shared library. -->
 		<OutputType>Library</OutputType>
 		<IsTestProject>false</IsTestProject>
+		<!-- Microsoft Testing Platform runs every project under tests/ that carries the xunit
+		     packages this folder's props add. VSTest quietly skipped a library; MTP instead
+		     reports "Zero tests ran" and fails the whole run with exit code 8, while every real
+		     test passes. This opts the library out. -->
+		<IsTestingPlatformApplication>false</IsTestingPlatformApplication>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
-		<PackageReference Include="Testcontainers.PostgreSql" />
-		<PackageReference Include="Testcontainers.XunitV3" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Project reference rather than the published package on purpose: this repo is where
+		     Creomobile.Testing.Postgres.Xunit is developed, so its own tests must exercise the
+		     working copy, not the last release. -->
+		<ProjectReference Include="..\..\..\src\Testing\Creomobile.Testing.Postgres.Xunit\Creomobile.Testing.Postgres.Xunit.csproj" />
 	</ItemGroup>
 </Project>

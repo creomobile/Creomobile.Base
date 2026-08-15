@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<ItemGroup>
+		<PackageReference Include="Npgsql" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\src\Testing\Creomobile.Testing.Postgres.Xunit\Creomobile.Testing.Postgres.Xunit.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Using Include="Creomobile.Testing.Postgres" />
+	</ItemGroup>
+</Project>

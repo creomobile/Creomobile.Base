@@ -6,12 +6,20 @@
 	<ItemGroup>
 		<PackageVersion Include="AwesomeAssertions" Version="9.5.0" />
 		<PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0" />
-		<PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
-		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.11" />
+		<PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
+		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
+		<PackageVersion Include="Npgsql" Version="10.0.3" />
 		<PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
-		<PackageVersion Include="Testcontainers.PostgreSql" Version="4.13.0" />
-		<PackageVersion Include="Testcontainers.XunitV3" Version="4.13.0" />
-		<PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
-		<PackageVersion Include="xunit.v3" Version="3.2.2" />
+		<PackageVersion Include="Testcontainers.PostgreSql" Version="4.14.0" />
+		<PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
+		<PackageVersion Include="xunit.v3" Version="4.0.0" />
+		<!-- Deliberately behind the two above, and it has to stay there. This is the floor the
+		     published Creomobile.Testing.Postgres.Xunit compiles against; raising it would force
+		     xunit 4 on everyone who installs that package, which is the one thing it exists to
+		     avoid. A consumer already on xunit 4 resolves 4.0.0 here by ordinary NuGet rules.
+		     Consequence: an update check will report 3.2.2 -> 4.0.0 forever. That row is correct
+		     and must not be closed. -->
+		<PackageVersion Include="xunit.v3.extensibility.core" Version="3.2.2" />
 	</ItemGroup>
 </Project>

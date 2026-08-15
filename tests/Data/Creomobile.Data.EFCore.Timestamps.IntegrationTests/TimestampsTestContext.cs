@@ -1,3 +1,4 @@
+using Creomobile.Data.Abstractions;
 using Creomobile.Data.EFCore.Timestamps.IntegrationTests.Models;
 using Microsoft.EntityFrameworkCore;
 // ReSharper disable UnusedMember.Global
@@ -25,8 +26,15 @@ public sealed class TimestampsTestContext(DbContextOptions<TimestampsTestContext
 
     public DbSet<CascadeChild> CascadeChildren => Set<CascadeChild>();
 
+    public DbSet<ShadowDeletedAtEntity> ShadowDeletedAtEntities => Set<ShadowDeletedAtEntity>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // The CLR member is an explicit interface implementation, so this maps a shadow
+        // property rather than binding to it.
+        modelBuilder.Entity<ShadowDeletedAtEntity>()
+            .Property<DateTime?>(nameof(IDeletedAt.DeletedAt));
+
         modelBuilder.Entity<SoftDeleteOwner>(builder =>
         {
             builder.OwnsOne(o => o.Details);

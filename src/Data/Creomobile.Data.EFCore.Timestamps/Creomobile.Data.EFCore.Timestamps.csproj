@@ -2,8 +2,6 @@
 	<PropertyGroup>
 		<Description>EF Core support for the Creomobile.Data.Abstractions timestamp contracts: automatic CreatedAt/UpdatedAt maintenance and soft delete via DeletedAt</Description>
 		<PackageTags>creomobile;efcore;entity-framework;timestamps;soft-delete;conventions</PackageTags>
-		<!-- Not yet published: there is no baseline version to validate against. -->
-		<PackageValidationBaselineVersion></PackageValidationBaselineVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
