@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- https://learn.microsoft.com/dotnet/fundamentals/package-validation/diagnostic-ids
+
+     PKV006 fires because 0.2.2 shipped a net8.0 assembly and 0.2.3 does not. That is a
+     real breaking change and the check is right to report it; this file is the record
+     that it was made on purpose, one day after 0.2.2 was published and with no known
+     consumer on .NET 8.
+
+     DELETE THIS FILE at the next release. Once PackageValidationBaselineVersion moves to
+     0.2.3 the baseline has no net8.0 either, so the suppression stops describing anything
+     and starts hiding the next dropped framework instead. -->
+<Suppressions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Suppression>
+    <DiagnosticId>PKV006</DiagnosticId>
+    <Target>net8.0</Target>
+  </Suppression>
+</Suppressions>

@@ -11,10 +11,10 @@ does **not** come with is a support matrix: we do not promise a list of supporte
 Creomobile's own projects and published because there is no reason to keep them
 private.
 
-In practice that means the target frameworks follow what our projects need.
-`Creomobile.Data.Abstractions` has no dependencies and targets .NET 8 and .NET 10;
-everything else targets .NET 10, because EF Core 10 does. A version, once published,
-is never replaced or withdrawn — so if one works for you, it keeps working.
+In practice that means the target frameworks follow what our projects need. Every
+package targets .NET 10, because that is what our projects run and what EF Core 10
+requires. A version, once published, is never replaced or withdrawn — so if one works
+for you, it keeps working.
 
 If you depend on one of these and something here would hurt, open an issue. A real
 user changes the calculation, and we would rather hear it than guess.

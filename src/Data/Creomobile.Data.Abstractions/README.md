@@ -21,8 +21,9 @@ are UTC — values must have `DateTimeKind.Utc`.
 
 ## Requirements
 
-- .NET 8 or .NET 10.
+- .NET 10.
 
-This package has no dependencies of its own, so nothing here forces a recent runtime.
-The other Creomobile.Data packages target .NET 10 only, because the EF Core version
-they build on does.
+Version 0.2.2 also shipped a `net8.0` assembly and 0.2.3 does not — see the changelog. If
+you need these contracts on an earlier runtime, open an issue: the package has no
+dependencies of its own, so nothing in it forces a recent runtime. The target framework
+says what we build and test, not what the code technically needs.

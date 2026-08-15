@@ -7,6 +7,26 @@ others depend on has to be there for their dependency floor to resolve.
 
 Dates are release dates. Versions are the tags `<package-id-lowercase>/v<version>`.
 
+## 0.2.3 — 2026-08-16
+
+**Creomobile.Data.Abstractions targets .NET 10 only again.** 0.2.2 added a `net8.0`
+assembly beside it. The code was fine; the reason was not. That target was justified as
+reaching "the current long-term release", and .NET 8 is not it: .NET 8 leaves support on
+2026-11-10, while .NET 10 — already the only target — is the current long-term release.
+Nobody had asked for .NET 8.
+
+Removing a target framework is a breaking change, and this is one: a project on .NET 8
+that took 0.2.2 cannot restore 0.2.3. It is done now because now is the day after 0.2.2
+shipped, which is the narrowest this window will ever be. 0.2.2 stays on nuget.org and
+keeps working, as every published version does.
+
+If you need these contracts on an earlier runtime, open an issue. The package has no
+dependencies, so nothing in it forces a recent runtime — a target framework here is a
+statement about what we build and test, not a technical floor.
+
+**Everything else — no change.** Republished at the lockstep version;
+`Creomobile.Data.EFCore.Timestamps` requires `Creomobile.Data.Abstractions` at `>= 0.2.3`.
+
 ## 0.2.2 — 2026-08-16
 
 **Creomobile.Data.Abstractions now targets .NET 8 as well as .NET 10.** It is interfaces and
