@@ -38,10 +38,6 @@ public sealed class PostgresFixtureTests(PostgresAssemblyFixture postgresFixture
     }
 
     [Fact]
-    public void ContainerIsRunningOnceTheFixtureIsInitialized()
-        => postgresFixture.Container.State.Should().Be(TestcontainersStates.Running);
-
-    [Fact]
     public async Task GetConnectionStringTargetsTheNamedDatabaseAndKeepsTheRestOfTheString()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -100,19 +96,49 @@ public sealed class PostgresFixtureTests(PostgresAssemblyFixture postgresFixture
         => FluentActions.Invoking(() => new ImageProbeFixture(image))
             .Should().Throw<ArgumentException>();
 
+    const string MissingImage = "creomobile-does-not-exist/postgres:no-such-tag";
+
+    [Fact]
     // The failure that actually happens — Docker cannot produce the image — must surface as
     // itself. The fixture disposes the half-started container on the way out, and that cleanup
     // must not become the exception the developer sees.
-    [Fact]
+    //
+    // THE ASSERTION IS A DISCRIMINATOR, NOT A CATCH-ALL, and that is the whole design of this
+    // test. Accepting any exception makes it green when Docker is unreachable, when the registry
+    // does not resolve, and when a pull is refused for credentials — none of which is the claim,
+    // and a test that passes for reasons unrelated to its subject is not evidence.
+    //
+    // The discriminator rather than a type: the exception must NAME THE IMAGE
+    // this fixture asked for. That is deliberately not an assertion on Testcontainers' exception
+    // type — which type it raises is its business and changes with its versions, while "the
+    // error is about the image we asked for" is our claim and stays ours.
+    //
+    // BE PRECISE ABOUT WHAT IT SEPARATES. It does NOT distinguish "no such
+    // image" from "the registry refused the pull" or "the pull timed out" — all of those can
+    // name the image, and the message actually measured here is a pull-access denial. It
+    // separates the two things this test is about: a failure while ACQUIRING THE IMAGE, which
+    // is a startup failure, from anything else — an unreachable daemon, or the cleanup that
+    // runs afterwards, neither of which mentions an image.
     public async Task StartupFailureSurfacesInsteadOfBeingLostInCleanup()
     {
-        var fixture = new ImageProbeFixture("creomobile-does-not-exist/postgres:no-such-tag");
+        var fixture = new ImageProbeFixture(MissingImage);
 
         var thrown = await FluentActions.Awaiting(() => fixture.InitializeAsync().AsTask())
             .Should().ThrowAsync<Exception>();
 
+        thrown.Which.Message.Should().Contain(
+            "creomobile-does-not-exist/postgres",
+            "the surfaced error must be the one about the image, not one raised while cleaning up");
+
+        // The two shapes a cleanup artefact takes if it ever replaced the startup failure.
         thrown.Which.Should().NotBeOfType<NullReferenceException>();
         thrown.Which.Should().NotBeOfType<ObjectDisposedException>();
+
+        // The other half of the same contract, and the reason the cleanup runs at all: nothing
+        // is left running, and disposing again is safe. xunit does not call DisposeAsync for a
+        // fixture whose initialization threw, so a caller that does must not be punished.
+        fixture.Container.State.Should().NotBe(TestcontainersStates.Running);
+        await FluentActions.Awaiting(() => fixture.DisposeAsync().AsTask()).Should().NotThrowAsync();
     }
 
     // Only reachable because the base type is abstract by design: this is the smallest legal

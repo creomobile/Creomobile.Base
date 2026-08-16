@@ -3,8 +3,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Creomobile.Data.EFCore.Timestamps.IntegrationTests;
 
-public sealed class SoftDeleteModelValidationTests(PostgresAssemblyFixture postgresFixture)
+// Model building only — no connection is ever opened, so this class takes no fixture and
+// needs no container. It used to ask the assembly fixture for a connection string it never
+// used, which cost nothing in time (the container is shared and starts anyway) and cost a
+// reader the truth: the class looked like a database test and is not one.
+public sealed class SoftDeleteModelValidationTests
 {
+    // Never dialled. Npgsql only has to accept the SHAPE of it, because building a model
+    // needs a provider, not a server.
+    const string UnusedConnectionString =
+        "Host=model-validation.invalid;Database=unused;Username=unused;Password=unused";
+
     [Fact]
     public void ImplementingIDeletedAtBelowHierarchyRootFailsModelBuilding()
     {
@@ -29,11 +38,10 @@ public sealed class SoftDeleteModelValidationTests(PostgresAssemblyFixture postg
             .WithMessage("*has no mapped 'DeletedAt' property*");
     }
 
-    // Model building never opens a connection — the database stays untouched.
-    DbContextOptions<TContext> CreateOptions<TContext>()
+    static DbContextOptions<TContext> CreateOptions<TContext>()
         where TContext : DbContext
         => new DbContextOptionsBuilder<TContext>()
-            .UseNpgsql(postgresFixture.GetConnectionString("model_validation_tests"))
+            .UseNpgsql(UnusedConnectionString)
             .UseTimestamps()
             .Options;
 }
