@@ -3,10 +3,10 @@
 	
 	<PropertyGroup>
 		<!-- Packages of this repo version in lockstep; bump here for a release. -->
-		<Version>0.2.3</Version>
+		<Version>0.2.4</Version>
 		<!-- Last published version; bump after each release. A new, not yet
 		     published package must clear this property in its csproj. -->
-		<PackageValidationBaselineVersion>0.2.2</PackageValidationBaselineVersion>
+		<PackageValidationBaselineVersion>0.2.3</PackageValidationBaselineVersion>
 		<!-- A link rather than the text, and static on purpose: what changed in a release is
 		     written once in CHANGELOG.md, so this line never goes stale and no package can be
 		     published carrying another one's notes. nuget.org shows it under Release Notes. -->
