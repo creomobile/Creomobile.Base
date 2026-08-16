@@ -16,6 +16,12 @@
 # change this file, not what nuget.org will accept from it.
 name: publish
 
+# The run says which build it is publishing, in its own title. Without this a caller that
+# starts a run cannot tell WHICH run it started - `gh workflow run` does not report an id, and
+# "the newest one" picks the wrong run as soon as two publishes are dispatched close together,
+# which the queueing below makes entirely possible.
+run-name: publish the packages of run ${{ inputs.build_run_id }}
+
 on:
   workflow_dispatch:
     inputs:
