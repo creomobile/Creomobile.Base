@@ -1,0 +1,227 @@
+# Build the four packages of this repository and keep them, without publishing anything.
+#
+# Publishing is a separate, manually started workflow that downloads the artifact of a
+# NAMED run of this one. The split exists because publishing to nuget.org cannot be
+# undone: the decision has to be made looking at packages that already exist, not at the
+# intention to build them.
+#
+# This workflow holds no secret and needs none.
+#
+# TWO WAYS IN, and they accept different things.
+#   * A tag `creomobile.base/v<version>` is the real release request. The version is
+#     taken from the tag and must equal the one this repository declares.
+#   * `workflow_dispatch` is for exercising the machinery. It runs on a branch, where
+#     there is no tag to compare anything against, so the version to expect is given as
+#     an input. It proves the build and the artifact; it does not prove the tag contract.
+#     Remove it once the tag path has run for real.
+name: build
+
+on:
+  push:
+    # `*` does not match a slash in these filters, which is exactly why the receipt tags
+    # (`creomobile.data.abstractions/v…`) placed by the publish workflow do not start a
+    # build. Pushes to master start nothing at all - deliberately, so that a release is
+    # always something somebody asked for by name.
+    tags:
+      - 'creomobile.base/v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'The version this repository is expected to declare, e.g. 0.2.4'
+        required: true
+        type: string
+
+# Nothing here writes. The receipts are placed by the publish workflow, which is the one
+# that can see whether a version became restorable.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # Not pinned to a numbered image. `ubuntu-latest` moves, and that is accepted: the
+    # only thing this job needs from the image is a working Docker daemon for the tests,
+    # and pinning would trade a rare surprise for a standing maintenance item.
+    runs-on: ubuntu-latest
+    steps:
+      # Actions are pinned to full commit SHAs, not to `@v7`. A major-version tag is
+      # mutable - whoever owns the action can move it - so it names an intention, not
+      # code. The comment carries the human-readable version for whoever updates it.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Nothing here talks to git again, so the token has no reason to stay behind
+          # in .git/config where a build target or a restored dependency could read it.
+          persist-credentials: false
+
+      # Both entry points end here, so every step below reads one value and does not
+      # care which way the run started.
+      - name: Work out which version this run is for
+        id: expected
+        # Through the environment, never interpolated into the script. `${{ }}` is
+        # substituted as TEXT before bash sees the line, so an input containing a quote
+        # or a semicolon would stop being a value and start being code. Everything a
+        # human can type reaches these scripts this way.
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ $GITHUB_EVENT_NAME == push ]]; then
+              # refs/tags/creomobile.base/v0.2.4 -> 0.2.4
+              version=${GITHUB_REF_NAME##*/v}
+          else
+              version=$INPUT_VERSION
+          fi
+          # Canonical form only. A leading zero would pass a looser check and then mean
+          # two different things at once: NuGet normalises `01.0.0` to `1.0.0`, so the
+          # tag and the published package would disagree about which release this is.
+          [[ $version =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] \
+              || { echo "::error::'$version' is not a canonical X.Y.Z version"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "this run is for $version"
+
+      # Before the SDK is even installed: it costs milliseconds and fails the whole run,
+      # and waiting through a test suite to learn that a changelog entry was forgotten is
+      # a bad trade even where minutes are free.
+      - name: The changelog has an entry for this version
+        env:
+          VERSION: ${{ steps.expected.outputs.version }}
+        run: |
+          set -euo pipefail
+          grep -qE "^## ${VERSION//./\\.}( |$)" CHANGELOG.md \
+              || { echo "::error file=CHANGELOG.md::no '## $VERSION' heading - write the entry before releasing"; exit 1; }
+          echo "found the heading for $VERSION"
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          # The SDK this repository asks for, rather than whatever the runner ships.
+          # Not a hard pin: global.json says `rollForward: latestFeature`, so a newer
+          # feature band of .NET 10 is allowed to serve. global.json is also what selects
+          # the Microsoft Testing Platform runner, which changes how the suite is called.
+          global-json-file: global.json
+
+      # The tag says what is being released; this file says what will be built. They are
+      # allowed to disagree exactly once - here, before anything is built - and then the
+      # run stops. Correcting the file silently would leave a tag that describes a commit
+      # it does not match, and tags cannot be corrected afterwards.
+      #
+      # The baseline is read in the same breath. Package validation runs inside `pack`
+      # below and compares the new public API against a published version - but only if
+      # it has one to compare against, and an empty property turns the whole check into a
+      # no-op that still reports success. That is not hypothetical: the value sat empty
+      # for six days in August 2026. WHICH version it should be is decided by the release
+      # driver, which asks nuget.org; all this asks is that there is one.
+      - name: The tag, the declared version and the baseline
+        env:
+          VERSION: ${{ steps.expected.outputs.version }}
+        run: |
+          set -euo pipefail
+          # Evaluated, not grepped: this is the value the build will actually use, and it
+          # is read from the file that owns it rather than from any one project, so
+          # renaming a project cannot silently break this check.
+          dotnet msbuild src/Directory.Build.props \
+                 -getProperty:Version -getProperty:PackageValidationBaselineVersion -nologo \
+                 > "$RUNNER_TEMP/props.json"
+          read -r declared baseline < <(python3 -c '
+          import json, sys
+          p = json.load(open(sys.argv[1]))["Properties"]
+          print(p["Version"], p["PackageValidationBaselineVersion"] or "-")
+          ' "$RUNNER_TEMP/props.json")
+          [[ $declared == "$VERSION" ]] \
+              || { echo "::error::this run is for $VERSION but the repository declares $declared"; exit 1; }
+          [[ $baseline != "-" ]] \
+              || { echo "::error::PackageValidationBaselineVersion is empty - the API compatibility check would pass without comparing anything"; exit 1; }
+          echo "version $declared, compared against $baseline"
+
+      # Directly, not through the playbook's dotnet-test.sh: what CI needs from that
+      # script is one invocation, while what it adds - checking that the Docker daemon
+      # answers, one shape of command - is useful on a developer's machine. The suite
+      # itself is the same one.
+      #
+      # The suite reaches for Docker: the tests start a real PostgreSQL, pinned by digest
+      # so a fresh runner pulls the same bytes every time. ubuntu-latest ships a working
+      # daemon; macOS and Windows runners do not, which is why this job is Linux-only.
+      #
+      # -c Release because that is what gets packed. Testing Debug and shipping Release
+      # leaves a gap exactly the width of every `#if DEBUG`, every configuration-dependent
+      # MSBuild item and every optimisation difference.
+      #
+      # --solution, not a positional path: with the Microsoft Testing Platform runner
+      # selected, `dotnet test <solution>` is refused outright.
+      - name: Tests
+        run: dotnet test --solution Creomobile.Base.sln -c Release
+
+      # ContinuousIntegrationBuild is not passed here: this repository already turns it on
+      # when GITHUB_ACTIONS is set.
+      #
+      # The public-API compatibility check runs INSIDE pack, against the baseline verified
+      # above - so a break shows up here rather than after publication.
+      - name: Pack
+        run: dotnet pack Creomobile.Base.sln -c Release -o artifacts --nologo
+
+      # A zero exit code is not evidence, and "at least one package appeared" is not
+      # either: three packages out of four is a successful-looking run that produces a
+      # partial release. So the produced set is compared against the expected set, both
+      # derived rather than listed.
+      #
+      # DERIVED, NOT WRITTEN DOWN HERE. A list of four names in this file would stop
+      # being true on the day a fifth package is added, and would do it silently. The
+      # solution knows which projects there are and each project knows whether it is
+      # packable, so that is where the expectation comes from.
+      #
+      # Comparing names also subsumes the version check: a package built at the wrong
+      # number strips to a name nothing expects, and shows up as a difference.
+      - name: The artifact holds exactly the packages this solution declares
+        env:
+          VERSION: ${{ steps.expected.outputs.version }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          : > "$RUNNER_TEMP/expected.txt"
+          while IFS= read -r project; do
+              [[ $project == *.csproj ]] || continue
+              dotnet msbuild "$project" -getProperty:IsPackable -getProperty:PackageId -nologo \
+                     > "$RUNNER_TEMP/project.json"
+              read -r packable id < <(python3 -c '
+          import json, sys
+          p = json.load(open(sys.argv[1]))["Properties"]
+          print(p["IsPackable"], p["PackageId"])
+          ' "$RUNNER_TEMP/project.json")
+              [[ $packable == true ]] || continue
+              printf '%s\n' "$id" >> "$RUNNER_TEMP/expected.txt"
+          done < <(dotnet sln Creomobile.Base.sln list)
+          sort -o "$RUNNER_TEMP/expected.txt" "$RUNNER_TEMP/expected.txt"
+
+          for package in artifacts/*.nupkg; do
+              name=${package##*/}
+              printf '%s\n' "${name%".$VERSION.nupkg"}"
+          done | sort > "$RUNNER_TEMP/produced.txt"
+
+          if ! diff -u "$RUNNER_TEMP/expected.txt" "$RUNNER_TEMP/produced.txt"; then
+              echo "::error::the packed set is not the set this solution declares (- expected, + produced)"
+              exit 1
+          fi
+
+          # Symbols travel with the package or debugging a published build is guesswork.
+          while IFS= read -r id; do
+              [[ -f "artifacts/$id.$VERSION.snupkg" ]] \
+                  || { echo "::error::$id has no .snupkg at $VERSION"; exit 1; }
+          done < "$RUNNER_TEMP/expected.txt"
+
+          echo "$(wc -l < "$RUNNER_TEMP/expected.txt") packages at $VERSION, each with symbols"
+
+      # One artifact, both kinds of file, named by the version so that a run picked out
+      # of the list months later says what it holds. The publish workflow downloads this
+      # from a run named explicitly by number - never "the latest successful one", which
+      # would publish the wrong build the first time two releases run close together.
+      #
+      # Thirty days is enough to take a failed release apart, and short enough that
+      # storage does not accumulate. The tags and the published packages are what live
+      # forever; this is scaffolding.
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: packages-${{ steps.expected.outputs.version }}
+          path: |
+            artifacts/*.nupkg
+            artifacts/*.snupkg
+          if-no-files-found: error
+          retention-days: 30
