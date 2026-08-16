@@ -7,6 +7,20 @@ others depend on has to be there for their dependency floor to resolve.
 
 Dates are release dates. Versions are the tags `<package-id-lowercase>/v<version>`.
 
+## 0.2.5 — 2026-08-16
+
+**No change to any package.** The code in all four is the same as in 0.2.3. This release
+exists to carry the publishing path itself: from here on the packages are built and
+published by GitHub Actions, started by a tag, and no API key is involved anywhere —
+nuget.org issues the workflow a credential that lives one hour and is used once.
+
+**0.2.4 was never published.** Its tag exists and its build refused, because the entry you
+are reading now was missing at the time. A tag names a commit permanently and is not moved,
+so the number was left behind rather than reused.
+
+Republished at the lockstep version; `Creomobile.Data.EFCore.Timestamps` requires
+`Creomobile.Data.Abstractions` at `>= 0.2.5`.
+
 ## 0.2.3 — 2026-08-16
 
 **Creomobile.Data.Abstractions targets .NET 10 only again.** 0.2.2 added a `net8.0`
