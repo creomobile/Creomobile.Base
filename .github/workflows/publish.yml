@@ -1,0 +1,575 @@
+# Publish the packages of a NAMED build run to nuget.org, in dependency order, and record
+# each one with a tag as soon as it becomes restorable.
+#
+# THIS IS THE IRREVERSIBLE HALF. A version on nuget.org can never be replaced or withdrawn,
+# so everything that can be checked is checked BEFORE the first push, and the run number is
+# given by hand rather than guessed: "the latest successful build" would publish the wrong
+# packages the first time two releases happen close together.
+#
+# THE FILE NAME IS PART OF THE CONTRACT. The nuget.org trusted-publishing policy names this
+# file - owner, repository, `publish.yml`. Rename it and publishing stops working, silently
+# and only at the moment somebody tries to release.
+#
+# WHAT THE POLICY ACTUALLY GRANTS, stated plainly: it is owned by the nuget.org account and
+# "applies to all packages owned by the selected owner" - not to these four ids. So this
+# workflow can publish under any package id that account owns. The boundary is who can
+# change this file, not what nuget.org will accept from it.
+name: publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: 'Run id of the build workflow whose packages to publish, e.g. 31961934165'
+        required: true
+        type: string
+
+# Two publishes must never overlap: they would push interdependent packages in interleaved
+# order and the waiting below would be watching the wrong thing. Queue, never cancel - a
+# cancelled publish is one that pushed some packages and recorded none of them.
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+permissions:
+  # To read another run and download its artifact.
+  actions: read
+  # To place the receipt tags. There is no "tags only" permission on GitHub, so this is
+  # wider than what is used; nothing here writes a branch.
+  contents: write
+  # To mint the short-lived nuget.org key. No long-lived secret exists anywhere.
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      # STEP 1 of the checks, and the one that decides what this run is about. Everything
+      # after it works from `version` and `head_sha` and never re-reads the input.
+      #
+      # The build run must have been started BY THE TAG. A workflow_dispatch build produces
+      # perfectly good packages, but publishing them would put a version on nuget.org that
+      # no tag in this repository records - and tags are the whole account of what was
+      # released. So the run has to be a tag push, and the tag has to name this version and
+      # point at the commit the run was built from.
+      - name: The run this publish is for
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_RUN_ID: ${{ inputs.build_run_id }}
+        run: |
+          set -euo pipefail
+          [[ $BUILD_RUN_ID =~ ^[0-9]+$ ]] \
+              || { echo "::error::'$BUILD_RUN_ID' is not a run id"; exit 1; }
+
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID" > "$RUNNER_TEMP/run.json" 2>/dev/null \
+              || { echo "::error::there is no run $BUILD_RUN_ID in $GITHUB_REPOSITORY"; exit 1; }
+          read -r path event status conclusion head_sha head_branch < <(python3 -c '
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          print(r["path"], r["event"], r["status"], r["conclusion"] or "-",
+                r["head_sha"], r["head_branch"] or "-")
+          ' "$RUNNER_TEMP/run.json")
+
+          [[ $path == .github/workflows/build.yml ]] \
+              || { echo "::error::run $BUILD_RUN_ID is $path, not the build workflow"; exit 1; }
+          [[ $status == completed && $conclusion == success ]] \
+              || { echo "::error::run $BUILD_RUN_ID is $status/$conclusion, not a successful build"; exit 1; }
+          [[ $event == push ]] \
+              || { echo "::error::run $BUILD_RUN_ID was started by $event, not by a tag - only a tagged build may be published"; exit 1; }
+
+          # The version is not an input. It is whatever that run put its packages under, so
+          # there is no way to publish one version's packages while claiming another.
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID/artifacts" > "$RUNNER_TEMP/artifacts.json"
+          read -r count artifact expired < <(python3 -c '
+          import json, sys
+          a = json.load(open(sys.argv[1]))["artifacts"]
+          first = a[0] if a else {"name": "-", "expired": "-"}
+          print(len(a), first["name"], str(first["expired"]).lower())
+          ' "$RUNNER_TEMP/artifacts.json")
+          [[ $count == 1 ]] \
+              || { echo "::error::run $BUILD_RUN_ID carries $count artifacts, expected exactly one"; exit 1; }
+          [[ $expired == false ]] \
+              || { echo "::error::the artifact of run $BUILD_RUN_ID has expired - build the version again"; exit 1; }
+          [[ $artifact =~ ^packages-(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] \
+              || { echo "::error::artifact '$artifact' is not named packages-<X.Y.Z>"; exit 1; }
+          version=${artifact#packages-}
+
+          # `git/ref/tags/<name>` resolves the tag; a lightweight tag points straight at the
+          # commit, an annotated one at a tag object, so the type is checked rather than
+          # assumed.
+          tag="creomobile.base/v$version"
+          # For a run started by a tag push, head_branch holds the TAG name - measured against
+          # a public repository whose release workflow is tag-only. `event == push` alone does
+          # not say that: a branch push is a push too. Today build.yml has no branch trigger at
+          # all, so this cannot happen; the check is here so that adding one later cannot
+          # quietly turn a branch build into something publishable.
+          [[ $head_branch == "$tag" ]] \
+              || { echo "::error::run $BUILD_RUN_ID ran on '$head_branch', not on the tag $tag"; exit 1; }
+          gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" > "$RUNNER_TEMP/tag.json" 2>/dev/null \
+              || { echo "::error::there is no tag $tag - this version was never released"; exit 1; }
+          read -r kind sha < <(python3 -c '
+          import json, sys
+          o = json.load(open(sys.argv[1]))["object"]
+          print(o["type"], o["sha"])
+          ' "$RUNNER_TEMP/tag.json")
+          if [[ $kind == tag ]]; then
+              sha=$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$sha" --jq '.object.sha')
+          fi
+          [[ $sha == "$head_sha" ]] \
+              || { echo "::error::$tag points at $sha but run $BUILD_RUN_ID built $head_sha"; exit 1; }
+
+          {
+              echo "version=$version"
+              echo "artifact=$artifact"
+              echo "head_sha=$head_sha"
+          } >> "$GITHUB_OUTPUT"
+          echo "publishing $version, built by run $BUILD_RUN_ID from $head_sha ($tag)"
+
+      # At the commit that was built, not at the tip of the default branch. The tip may have
+      # moved since, and every question asked below - which packages this solution declares,
+      # which SDK to use - has to be answered as of the release, not as of today.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.run.outputs.head_sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - name: Download the packages of that run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_RUN_ID: ${{ inputs.build_run_id }}
+          ARTIFACT: ${{ steps.run.outputs.artifact }}
+        run: |
+          set -euo pipefail
+          # --repo explicitly: without it gh works the repository out from the git remote of
+          # the current directory, which makes this step depend on where it is run from.
+          gh run download "$BUILD_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$ARTIFACT" --dir packages
+          ls -1 packages
+
+      # The build already checked its own output. This asks the same question from the other
+      # side, because it is the last chance: are these the packages that THIS COMMIT declares,
+      # and does each file hold what its name claims?
+      #
+      # The expected set comes from the solution, the publication order comes from the
+      # packages themselves. Two sources on purpose, each authoritative for its own question:
+      # the solution is the only thing that knows a package is MISSING, and a .nuspec is the
+      # only thing that knows what will actually be restored alongside it. Neither is a list
+      # written down in this file, which would stop being true the day a fifth package is
+      # added and would do it silently.
+      - name: The artifact is exactly what that commit declares
+        env:
+          VERSION: ${{ steps.run.outputs.version }}
+        run: |
+          set -euo pipefail
+          : > "$RUNNER_TEMP/expected.txt"
+          while IFS= read -r project; do
+              [[ $project == *.csproj ]] || continue
+              dotnet msbuild "$project" -getProperty:IsPackable -getProperty:PackageId -nologo \
+                     > "$RUNNER_TEMP/project.json"
+              read -r packable id < <(python3 -c '
+          import json, sys
+          p = json.load(open(sys.argv[1]))["Properties"]
+          print(p["IsPackable"], p["PackageId"])
+          ' "$RUNNER_TEMP/project.json")
+              [[ $packable == true ]] || continue
+              printf '%s\n' "$id" >> "$RUNNER_TEMP/expected.txt"
+          done < <(dotnet sln Creomobile.Base.sln list)
+
+          python3 - packages "$VERSION" "$RUNNER_TEMP/expected.txt" "$RUNNER_TEMP/plan.tsv" <<'PY'
+          import os, sys, zipfile
+          import xml.etree.ElementTree as ET
+
+          folder, version, expected_file, plan_file = sys.argv[1:5]
+          expected = sorted({line.strip() for line in open(expected_file) if line.strip()})
+
+          def fail(message):
+              print(f"::error::{message}")
+              sys.exit(1)
+
+          # Without this, a solution that declares nothing packable compares an empty set
+          # against an empty artifact, agrees with itself, and reports a successful release
+          # of nothing at all.
+          if not expected:
+              fail("this solution declares no packable projects - there is nothing to publish")
+
+          def local(element):
+              """The tag without its namespace. A .nuspec carries one of several schema
+              versions, all differing only in the namespace URI, so matching the full name
+              would refuse packages that are perfectly well formed."""
+              return element.tag.rsplit("}", 1)[-1]
+
+          def read(path, name, suffix):
+              """The id, the version and the declared dependencies, read from the archive
+              rather than from the file name."""
+              with zipfile.ZipFile(path) as archive:
+                  specs = [n for n in archive.namelist() if n.endswith(".nuspec") and "/" not in n]
+                  if len(specs) != 1:
+                      fail(f"{name} holds {len(specs)} .nuspec files, expected one")
+                  root = ET.fromstring(archive.read(specs[0]))
+              meta = next((c for c in root if local(c) == "metadata"), None)
+              if meta is None:
+                  fail(f"{name} has no <metadata>")
+              fields = {local(c): (c.text or "").strip() for c in meta}
+              package_id, package_version = fields.get("id"), fields.get("version")
+              if not package_id or not package_version:
+                  fail(f"{name} does not declare both an id and a version")
+              # The file name is what gets pushed and what a human reads in the log; the
+              # .nuspec is what nuget.org will index. They have to be the same package.
+              if name != f"{package_id}.{package_version}{suffix}":
+                  fail(f"{name} contains {package_id} {package_version} - the file name does not match its contents")
+              if package_version != version:
+                  fail(f"{name} is version {package_version}, but this release is {version}")
+              deps = [(d.get("id") or "", d.get("version") or "")
+                      for d in meta.iter() if local(d) == "dependency"]
+              return package_id, deps
+
+          # Package ids are case-insensitive on nuget.org, so every comparison between them
+          # is folded. Comparing them as written would let `creomobile.data.abstractions` and
+          # `Creomobile.Data.Abstractions` look like two different packages - and the one
+          # place that matters is the dependency graph below, where a missed edge puts a
+          # package in the wrong wave and re-creates exactly the orphan this ordering exists
+          # to prevent.
+          canonical = {}
+          for declared in expected:
+              if declared.casefold() in canonical:
+                  fail(f"this solution declares both {canonical[declared.casefold()]} and {declared}, "
+                       f"which nuget.org treats as one package")
+              canonical[declared.casefold()] = declared
+
+          found, symbol_files = {}, {}
+          for name in sorted(os.listdir(folder)):
+              path = os.path.join(folder, name)
+              if name.endswith(".snupkg"):
+                  package_id, _ = read(path, name, ".snupkg")
+                  if package_id.casefold() in symbol_files:
+                      fail(f"two symbol packages claim to be {package_id}")
+                  symbol_files[package_id.casefold()] = name
+                  continue
+              if not name.endswith(".nupkg"):
+                  fail(f"{name} is neither a package nor a symbol package")
+              package_id, deps = read(path, name, ".nupkg")
+              if package_id.casefold() in found:
+                  fail(f"{package_id} appears twice in the artifact")
+              found[package_id.casefold()] = {"id": package_id, "file": path, "deps": deps}
+
+          if sorted(canonical) != sorted(found):
+              missing = [canonical[k] for k in canonical if k not in found]
+              extra = [found[k]["id"] for k in found if k not in canonical]
+              fail("the artifact is not the set this solution declares"
+                   + (f"; missing: {', '.join(missing)}" if missing else "")
+                   + (f"; unexpected: {', '.join(extra)}" if extra else ""))
+          if sorted(symbol_files) != sorted(found):
+              missing = [found[k]["id"] for k in found if k not in symbol_files]
+              extra = [symbol_files[k] for k in symbol_files if k not in found]
+              fail("the symbol packages are not the set of packages"
+                   + (f"; without symbols: {', '.join(missing)}" if missing else "")
+                   + (f"; unexpected: {', '.join(extra)}" if extra else ""))
+
+          # Lockstep is an invariant of this repository, and this is the last moment it can
+          # be checked. A package depending on a sibling at some OTHER version would be
+          # published happily by the ordering below - which waits for THIS version - and
+          # would then reference something that may not exist at all.
+          #
+          # What is checked is the LOWER BOUND, not an exact range: NuGet reads `0.2.4` as
+          # `[0.2.4, )`, and that is left alone on purpose. `dotnet pack` turns a
+          # ProjectReference into a lower bound, so demanding `[0.2.4]` would refuse every
+          # build this repository produces and would make the packages unusable to anyone
+          # whose graph also wants a newer sibling. The question here is only whether the
+          # bound names THIS release - if it does, the package pushed in an earlier wave
+          # satisfies it, and no orphan can exist.
+          edges = {}
+          for key, package in found.items():
+              edges[key] = set()
+              for dep_id, dep_version in package["deps"]:
+                  if dep_id.casefold() not in canonical:
+                      continue
+                  if dep_version != version:
+                      fail(f"{package['id']} depends on {dep_id} {dep_version or '(no version)'}, "
+                           f"but this release is lockstep at {version}")
+                  edges[key].add(dep_id.casefold())
+
+          # Waves. Everything with no dependency inside this release goes first; then
+          # everything whose in-release dependencies are all in an earlier wave. A package
+          # is never pushed before something it needs, so an orphaned version - one that
+          # names a package nobody can restore - cannot come into existence.
+          waves, done, remaining = [], set(), dict(edges)
+          while remaining:
+              wave = sorted((k for k, deps in remaining.items() if deps <= done),
+                            key=lambda k: found[k]["id"])
+              if not wave:
+                  cycle = ", ".join(sorted(found[k]["id"] for k in remaining))
+                  fail(f"these packages depend on each other in a cycle: {cycle}")
+              waves.append(wave)
+              done.update(wave)
+              for key in wave:
+                  del remaining[key]
+
+          with open(plan_file, "w") as plan:
+              for number, wave in enumerate(waves):
+                  for key in wave:
+                      plan.write(f"{number}\t{found[key]['id']}\t{found[key]['file']}\n")
+
+          print(f"{len(found)} packages at {version}, each with symbols")
+          for number, wave in enumerate(waves):
+              print(f"  wave {number}: {', '.join(found[k]['id'] for k in wave)}")
+          PY
+
+      # A receipt says "this exact commit produced the version that is now restorable". If one
+      # already exists somewhere else, then either this is not the release it claims to be or
+      # a previous publish was recorded against a different commit. Either way the answer is
+      # not to publish and sort it out afterwards - by then it cannot be sorted out.
+      #
+      # A receipt already pointing at THIS commit is normal: it means an earlier attempt got
+      # that far, and this run is finishing the job.
+      - name: Nothing about this version is already settled elsewhere
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.run.outputs.version }}
+          HEAD_SHA: ${{ steps.run.outputs.head_sha }}
+        run: |
+          set -euo pipefail
+          conflicts=0
+          while IFS=$'\t' read -r _ package_id _; do
+              tag="${package_id,,}/v$VERSION"
+              recorded_here=false
+              if sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.sha' 2>/dev/null); then
+                  if [[ $sha == "$HEAD_SHA" ]]; then
+                      recorded_here=true
+                      echo "$tag is already recorded here - this run will finish what an earlier one started"
+                  else
+                      echo "::error::$tag already points at $sha, not at $HEAD_SHA"
+                      conflicts=$((conflicts + 1))
+                      continue
+                  fi
+              fi
+
+              # And ask nuget.org the same question, because the two can disagree. A version
+              # that is already served while nothing here records who produced it is the one
+              # case where publishing would be harmless but RECORDING would not: the push
+              # below would be skipped as a duplicate, the wait would confirm somebody else's
+              # package, and the receipt would name this commit as the producer of something
+              # it did not produce.
+              #
+              # THIS NARROWS THE WINDOW AND DOES NOT CLOSE IT, and there is no way to close
+              # it here. Between this check and the push, the account owner could publish the
+              # same version by hand. Comparing the published bytes against ours would not
+              # settle it either: nuget.org repository-signs every package it accepts, adding
+              # a .signature.p7s entry, so what it serves is provably not what was pushed
+              # (measured 2026-08-16). What actually removes the race is that once the local
+              # publishing script is gone, nothing but this workflow can publish these ids -
+              # and until then the only credential that could win it belongs to whoever
+              # started this run.
+              # `|| true` and not `|| echo 000`: curl writes the %{http_code} itself - 000 when
+              # it never got an answer - so a second one would make the code read 000000.
+              code=$(curl -sS --max-time 30 -o "$RUNNER_TEMP/index.json" -w '%{http_code}' \
+                     "https://api.nuget.org/v3-flatcontainer/${package_id,,}/index.json" || true)
+              case $code in
+                  200)
+                      if grep -qF "\"$VERSION\"" "$RUNNER_TEMP/index.json"; then already=true; else already=false; fi
+                      ;;
+                  # A package id nobody has ever published has no index at all.
+                  404) already=false ;;
+                  *)
+                      echo "::error::nuget.org answered $code for $package_id - cannot tell whether $VERSION is already there"
+                      conflicts=$((conflicts + 1))
+                      continue
+                      ;;
+              esac
+              if [[ $already == true && $recorded_here == false ]]; then
+                  echo "::error::nuget.org already serves $package_id $VERSION, but no receipt here says which commit produced it"
+                  conflicts=$((conflicts + 1))
+              elif [[ $already == true ]]; then
+                  echo "  and nuget.org already serves it - this one is done"
+              fi
+          done < "$RUNNER_TEMP/plan.tsv"
+          if [[ $conflicts -gt 0 ]]; then
+              echo "::error::$conflicts problem(s) with $VERSION - nothing was published"
+              exit 1
+          fi
+          echo "nothing contradicts publishing $VERSION"
+
+      # Last, because the key it mints lives one hour and is single-use. Everything that can
+      # refuse this release has already had its turn; from here on the run can only succeed
+      # or leave a partial release behind.
+      - name: Get a short-lived nuget.org key
+        id: login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          # The nuget.org profile name that owns these packages. Not a secret: nuget.org
+          # publishes the owner of every package, so hiding it here would protect nothing.
+          # What authenticates this job is the signed OIDC token, which nuget.org will only
+          # accept from this repository and this workflow file.
+          user: creomobile
+
+      # THE IRREVERSIBLE STEP.
+      #
+      # Waiting is not politeness. `dotnet nuget push` returns "accepted", not "published":
+      # the package goes into asynchronous validation on nuget.org and can fail it. The only
+      # honest confirmation is that the version appears at the flat-container address, which
+      # is the address `dotnet restore` reads - so "it is there" means literally "it can be
+      # restored".
+      #
+      # Each package is recorded the moment it is confirmed, not all of them at the end. The
+      # promise that receipts show what already went out is worth exactly nothing in the one
+      # case it exists for: stopping halfway.
+      - name: Publish in dependency order and record each package as it becomes restorable
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+          VERSION: ${{ steps.run.outputs.version }}
+          HEAD_SHA: ${{ steps.run.outputs.head_sha }}
+          # Read from the environment rather than written into the script so that the waiting
+          # can be exercised outside CI without sitting through half an hour.
+          WAIT_SECONDS: '1800'
+        run: |
+          set -euo pipefail
+
+          restorable() {
+              # A 404 is the normal answer for a package id nobody has published yet, and a
+              # network failure is indistinguishable from "not yet" on purpose: both mean
+              # "keep waiting", and neither may ever mean "confirmed".
+              curl -sS --max-time 30 "https://api.nuget.org/v3-flatcontainer/${1,,}/index.json" \
+                  | grep -qF "\"$VERSION\""
+          }
+
+          record() {
+              local tag="${1,,}/v$VERSION"
+              if gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
+                     -f "ref=refs/tags/$tag" -f "sha=$HEAD_SHA" >/dev/null 2>&1; then
+                  echo "  recorded $tag"
+                  return 0
+              fi
+              # Already there is fine only if it says the same thing. The step above proved
+              # that a minute ago; this repeats it because between then and now a receipt
+              # became a fact rather than a plan.
+              local existing
+              existing=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.sha' 2>/dev/null || true)
+              if [[ $existing == "$HEAD_SHA" ]]; then
+                  echo "  $tag was already recorded"
+                  return 0
+              fi
+              echo "::error::$1 is published but its receipt could not be placed"
+              return 1
+          }
+
+          # A receipt that cannot be placed does not stop the release. The package is out and
+          # restorable, so holding back the ones that depend on it would turn a bookkeeping
+          # failure into a partial release - the worse of the two. The job still fails at the
+          # end, naming the tags to place by hand.
+
+          published=()
+          unrecorded=()
+          reported=()
+          stopped=""
+          # ONE deadline for the whole release, not one per wave. The key minted above is
+          # valid for an hour, and a per-wave budget could add up past that - the last wave
+          # would then fail to push for a reason having nothing to do with the packages.
+          deadline=$((SECONDS + WAIT_SECONDS))
+          while IFS= read -r wave; do
+              echo "=== wave $wave ==="
+              pending=()
+              failed=()
+              while IFS=$'\t' read -r _ package_id file; do
+                  echo "pushing $package_id"
+                  # --skip-duplicate: a 409 means the version is already there, which is the
+                  # normal state when an earlier attempt pushed and then timed out waiting.
+                  # It is not a reason to stop; the confirmation below is what decides.
+                  # Symbols travel automatically: the .snupkg beside the .nupkg is pushed
+                  # unless --no-symbols says otherwise.
+                  if ! dotnet nuget push "$file" \
+                         --api-key "$NUGET_API_KEY" \
+                         --source https://api.nuget.org/v3/index.json \
+                         --skip-duplicate; then
+                      echo "::warning::pushing $package_id reported a failure"
+                      failed+=("$package_id")
+                      reported+=("$package_id")
+                  fi
+                  # Checked either way, and this is the whole point: a failed push is NOT
+                  # evidence that nothing arrived. The connection can drop after nuget.org
+                  # has accepted the upload, and that package then becomes restorable with
+                  # nobody watching for it - published, unrecorded, and reported as missing.
+                  # The price is that a genuinely refused push waits out the budget too.
+                  pending+=("$package_id")
+              done < <(awk -F'\t' -v w="$wave" '$1 == w' "$RUNNER_TEMP/plan.tsv")
+
+              # Confirm and record what was accepted, even if a sibling push failed: a
+              # package that is restorable has to get its receipt whatever else went wrong.
+              # The interval restarts each wave because its packages were just pushed.
+              interval=10
+              while (( ${#pending[@]} > 0 )); do
+                  still=()
+                  for package_id in "${pending[@]}"; do
+                      if restorable "$package_id"; then
+                          echo "$package_id $VERSION is restorable"
+                          if [[ " ${failed[*]} " == *" $package_id "* ]]; then
+                              echo "::warning::$package_id arrived even though its push reported a failure"
+                          fi
+                          published+=("$package_id")
+                          if ! record "$package_id"; then
+                              unrecorded+=("$package_id")
+                          fi
+                      else
+                          still+=("$package_id")
+                      fi
+                  done
+                  pending=("${still[@]}")
+                  if (( ${#pending[@]} == 0 )); then
+                      break
+                  fi
+                  if (( SECONDS >= deadline )); then
+                      echo "::error::gave up waiting after ${WAIT_SECONDS}s for: ${pending[*]}"
+                      break
+                  fi
+                  sleep "$interval"
+                  # Thinning: quick at first, because indexing usually takes a minute or two,
+                  # then rare, because after that something is wrong and polling will not fix it.
+                  interval=$((interval * 3 / 2))
+                  if (( interval > 60 )); then
+                      interval=60
+                  fi
+              done
+
+              # Only what is still unconfirmed stops the release. A push that reported a
+              # failure and then turned out to be restorable is a noisy success, not a
+              # reason to hold back the packages that depend on it.
+              if (( ${#pending[@]} > 0 )); then
+                  stopped="wave $wave did not complete"
+                  echo "::error::stopping here - anything in a later wave depends on this one"
+                  break
+              fi
+          # sort -n, not plain sort: wave numbers are numbers, and lexically "10" sorts
+          # between "1" and "2". With four packages there are two waves and it makes no
+          # difference; the day there are eleven, it would push a wave before the ones it
+          # depends on, which is the exact failure this ordering exists to prevent.
+          done < <(cut -f1 "$RUNNER_TEMP/plan.tsv" | sort -n -u)
+
+          echo "=== what went out ==="
+          if (( ${#published[@]} > 0 )); then
+              printf 'published and restorable: %s\n' "${published[*]}"
+          else
+              echo "published and restorable: nothing"
+          fi
+          if (( ${#unrecorded[@]} > 0 )); then
+              echo "::error::published but NOT recorded by a tag: ${unrecorded[*]} - place those tags by hand on $HEAD_SHA"
+              exit 1
+          fi
+          expected=$(wc -l < "$RUNNER_TEMP/plan.tsv")
+          if (( ${#published[@]} != expected )); then
+              echo "::error::${#published[@]} of $expected packages were published${stopped:+ ($stopped)} - a partial release is fixed by the next version, not by a retry"
+              exit 1
+          fi
+          # Everything is out and recorded, but a push that reported a failure is not allowed
+          # to end green. One push sends the .nupkg AND its .snupkg: it can be accepted for the
+          # package, fail while sending the symbols, and return a failure - after which the
+          # package appears in the index and every check above is satisfied while the symbols
+          # are simply missing. Nothing readable says whether symbols arrived, so the run says
+          # "look" rather than guessing.
+          if (( ${#reported[@]} > 0 )); then
+              echo "::error::${VERSION} is published and recorded, but the push of ${reported[*]} reported a failure - check whether the symbols arrived and push the .snupkg by hand if not"
+              exit 1
+          fi
+          echo "all $expected packages of $VERSION are published and recorded"
