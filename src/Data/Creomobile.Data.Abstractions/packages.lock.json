@@ -10,9 +10,9 @@
       },
       "Microsoft.NET.ILLink.Tasks": {
         "type": "Direct",
-        "requested": "[10.0.10, )",
-        "resolved": "10.0.10",
-        "contentHash": "HK7mO16Mk5t6c91PeG3YUpbdV65QbxOkcBRk9cGM5SIjWVSGsGlHwfINlficSs/4e/iImztp+Fcshgagiwu9Jg=="
+        "requested": "[10.0.11, )",
+        "resolved": "10.0.11",
+        "contentHash": "bEnPBGsz6qHB6RDQ9f7TGLK35IUVi/DwRyVKmwFpwt3yM4aew3+1lRIT2aFb4vGNdCGrYVM4Z0fkAphI0Hm/HQ=="
       }
     }
   }
