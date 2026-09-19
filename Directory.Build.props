@@ -18,6 +18,21 @@
 		     (No double hyphen anywhere in this comment: XML forbids it inside a comment,
 		     and MSBuild answers a broken props file by losing every property in it.) -->
 		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+		<!-- The lock file above records a content hash for every package, and for one taken
+		     from a local folder that hash is of the file sitting on this machine. The SDK
+		     registers its own library-packs folder as a restore source, so
+		     Microsoft.NET.ILLink.Tasks arrives from whichever SDK is installed instead of from
+		     nuget.org. Canonical builds .NET from source and ships its own copy of that
+		     package; Microsoft ships a different one. Same version number, different bytes,
+		     different hash.
+
+		     Measured on 2026-09-19, and it cost the version number 0.2.6: lock files
+		     regenerated on a machine whose .NET comes from apt fail restore in CI, which
+		     installs Microsoft's SDK, with NU1403 "the package is different than the last
+		     restore". Turning the folder off makes every restore take that package from
+		     nuget.org, so the hash recorded here is the feed's and no longer depends on who
+		     built the SDK a given machine happens to run. -->
+		<DisableImplicitLibraryPacksFolder>true</DisableImplicitLibraryPacksFolder>
 	</PropertyGroup>
 
 	<ItemGroup>

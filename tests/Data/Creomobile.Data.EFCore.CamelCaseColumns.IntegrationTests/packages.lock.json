@@ -366,7 +366,7 @@
         "type": "Project",
         "dependencies": {
           "AwesomeAssertions": "[9.6.0, )",
-          "Creomobile.Testing.Postgres.Xunit": "[0.2.5, )",
+          "Creomobile.Testing.Postgres.Xunit": "[0.2.6, )",
           "Microsoft.NET.Test.Sdk": "[18.10.1, )",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.3, )",
           "xunit.v3": "[4.0.1, )"
