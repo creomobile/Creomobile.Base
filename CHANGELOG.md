@@ -7,11 +7,11 @@ others depend on has to be there for their dependency floor to resolve.
 
 Dates are release dates. Versions are the tags `<package-id-lowercase>/v<version>`.
 
-## 0.2.6 — 2026-09-19
+## 0.2.7 — 2026-09-19
 
 **The three packages that have dependencies move to the .NET 10.0.12 servicing release and
 to Testcontainers 4.15.0.** These are dependency floors, which is what a consumer actually
-feels: taking 0.2.6 means resolving at least these versions.
+feels: taking 0.2.7 means resolving at least these versions.
 
 - `Creomobile.Data.EFCore.CamelCaseColumns` and `Creomobile.Data.EFCore.Timestamps` —
   `Microsoft.EntityFrameworkCore.Relational` 10.0.11 to 10.0.12.
@@ -24,9 +24,21 @@ feels: taking 0.2.6 means resolving at least these versions.
 `Creomobile.Testing.Postgres.Xunit` compiles against, and raising it would force xunit 4 on
 everyone who installs that package — the single thing the pin exists to avoid.
 
+**0.2.6 was never published.** Its tag exists and its build refused: restore failed with
+NU1403, `the package is different than the last restore`. The lock files had been
+regenerated on a machine whose .NET comes from the distribution's archive, and the SDK
+registers its own `library-packs` folder as a restore source — so
+`Microsoft.NET.ILLink.Tasks` came from the installed SDK rather than from nuget.org.
+Canonical builds .NET from source and ships its own build of that package, CI installs
+Microsoft's SDK and sees different bytes under the same version number, and a lock file
+records the hash of whichever copy was used. This repository now takes that package from
+the feed, so the hash no longer depends on who built the SDK a machine happens to run.
+A tag names a commit permanently and is not moved, so the number is skipped rather than
+reused. **None of this changes what the packages contain.**
+
 **Creomobile.Data.Abstractions — no change.** It has no package dependencies at all.
 Republished at the lockstep version; `Creomobile.Data.EFCore.Timestamps` requires
-`Creomobile.Data.Abstractions` at `>= 0.2.6`.
+`Creomobile.Data.Abstractions` at `>= 0.2.7`.
 
 ## 0.2.5 — 2026-08-16
 
