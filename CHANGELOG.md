@@ -7,6 +7,27 @@ others depend on has to be there for their dependency floor to resolve.
 
 Dates are release dates. Versions are the tags `<package-id-lowercase>/v<version>`.
 
+## 0.2.6 — 2026-09-19
+
+**The three packages that have dependencies move to the .NET 10.0.12 servicing release and
+to Testcontainers 4.15.0.** These are dependency floors, which is what a consumer actually
+feels: taking 0.2.6 means resolving at least these versions.
+
+- `Creomobile.Data.EFCore.CamelCaseColumns` and `Creomobile.Data.EFCore.Timestamps` —
+  `Microsoft.EntityFrameworkCore.Relational` 10.0.11 to 10.0.12.
+- `Creomobile.Testing.Postgres.Xunit` — `Microsoft.Extensions.Logging.Abstractions` 10.0.11
+  to 10.0.12, and `Testcontainers.PostgreSql` 4.14.0 to 4.15.0. The latter now retries a
+  transient Docker image pull failure rather than letting it fail the test run, which is the
+  one change in this release a consumer may notice while tests are running.
+
+**`xunit.v3.extensibility.core` stays at 3.2.2**, as it must. It is the floor
+`Creomobile.Testing.Postgres.Xunit` compiles against, and raising it would force xunit 4 on
+everyone who installs that package — the single thing the pin exists to avoid.
+
+**Creomobile.Data.Abstractions — no change.** It has no package dependencies at all.
+Republished at the lockstep version; `Creomobile.Data.EFCore.Timestamps` requires
+`Creomobile.Data.Abstractions` at `>= 0.2.6`.
+
 ## 0.2.5 — 2026-08-16
 
 **No change to any package.** The code in all four is the same as in 0.2.3. This release
