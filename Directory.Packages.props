@@ -14,12 +14,10 @@
 		<PackageVersion Include="Testcontainers.PostgreSql" Version="4.15.0" />
 		<PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
 		<PackageVersion Include="xunit.v3" Version="4.0.1" />
-		<!-- Deliberately behind the two above, and it has to stay there. This is the floor the
-		     published Creomobile.Testing.Postgres.Xunit compiles against; raising it would force
-		     xunit 4 on everyone who installs that package, which is the one thing it exists to
-		     avoid. A consumer already on xunit 4 resolves 4.0.0 here by ordinary NuGet rules.
-		     Consequence: an update check will report 3.2.2 -> 4.0.0 forever. That row is correct
-		     and must not be closed. -->
-		<PackageVersion Include="xunit.v3.extensibility.core" Version="3.2.2" />
+		<!-- The floor the published Creomobile.Testing.Postgres.Xunit compiles against, so a
+		     bump here is a change to that package's requirements, not only to this build.
+		     Until 0.3.0 it was held at 3.2.2 to keep serving xunit 3; that line stopped
+		     moving when xunit 4 shipped, and the package now requires xunit 4. -->
+		<PackageVersion Include="xunit.v3.extensibility.core" Version="4.0.1" />
 	</ItemGroup>
 </Project>

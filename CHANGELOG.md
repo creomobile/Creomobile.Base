@@ -7,6 +7,22 @@ others depend on has to be there for their dependency floor to resolve.
 
 Dates are release dates. Versions are the tags `<package-id-lowercase>/v<version>`.
 
+## 0.3.0 — 2026-10-03
+
+**Creomobile.Testing.Postgres.Xunit requires xunit 4.** The `xunit.v3.extensibility.core`
+dependency floor moves from `3.2.2` to `4.0.1`, which is why this is a minor rather than a
+patch: a test project still on xunit `3.2.x` can no longer install the package, because xunit
+binds its own packages to one exact version and the two requirements cannot both hold. The
+floor had been kept at `3.2.2` so that the one package would serve both lines. That line has
+had no release since xunit 4 shipped on 2026-08-15, and holding the floor cost something real:
+the package could use only the APIs the two lines had in common, and nothing here ever ran it
+on xunit 3 to prove that bet. A project already on xunit 4 resolved `4.0.x` before this release
+and sees no change. No code in the package changed.
+
+**Creomobile.Data.Abstractions, Creomobile.Data.EFCore.CamelCaseColumns,
+Creomobile.Data.EFCore.Timestamps — no change.** Republished at the lockstep version;
+`Creomobile.Data.EFCore.Timestamps` requires `Creomobile.Data.Abstractions` at `>= 0.3.0`.
+
 ## 0.2.7 — 2026-09-19
 
 **The three packages that have dependencies move to the .NET 10.0.12 servicing release and

@@ -104,11 +104,11 @@ that is worth telling us: a named operation can then replace the raw handle.
 - **.NET 10.** The package ships a `net10.0` assembly only — a test project on an earlier
   target framework cannot use it.
 - A reachable Docker daemon. The image is pulled on first use if it is not already local.
-- **xunit `3.2.x` or `4.x`.** One package serves both lines: it uses only `IAsyncLifetime`
-  and `AssemblyFixture`, whose shapes are identical across them, and the type you register
-  has a parameterless constructor, so xunit 4's `xUnit3005` rule is satisfied without any
-  suppression. The dependency is on `xunit.v3.extensibility.core` alone, declared as a
-  floor, so it imposes no test runner on you and does not hold you back from xunit 4.
+- **xunit `4.x`** (`4.0.1` or newer). The dependency is on `xunit.v3.extensibility.core`
+  alone, declared as a floor, so the package imposes no test runner on you. The type you
+  register has a parameterless constructor, so xunit's `xUnit3005` rule is satisfied
+  without any suppression. Versions before `0.3.0` also served xunit `3.2.x`; that line
+  has had no release since xunit 4 shipped, and `0.3.0` dropped it.
 
 ## Diagnostics
 
