@@ -7,6 +7,29 @@ others depend on has to be there for their dependency floor to resolve.
 
 Dates are release dates. Versions are the tags `<package-id-lowercase>/v<version>`.
 
+## 0.3.1 — 2026-10-10
+
+**Creomobile.Testing.Postgres.Xunit moves two dependency floors**, which is what a consumer
+actually feels: taking 0.3.1 means resolving at least these versions.
+
+- `xunit.v3.extensibility.core` 4.0.1 to 4.0.2. A bug-fix release: tests marked non-parallel
+  could run in parallel and parallel tests scheduled after them could stay sequential, a
+  thread-count multiplier could round down to zero and lift the limit, `SkipWhen` /
+  `SkipUnless` were ignored on `InlineData`, and `IAsyncLifetime`'s documentation now states
+  that `DisposeAsync` is not called when `InitializeAsync` throws — the contract this
+  package's fixture already cleans up under. xunit binds its own packages to one exact
+  version, so a test project on `4.0.1` moves to `4.0.2` with this package.
+- `Testcontainers.PostgreSql` 4.15.0 to 4.16.0. `WithSsl` is now a method of every builder
+  and works on Alpine images and under non-root users; image builds gained BuildKit and
+  `--platform` variables. None of it is on the path of a plain container started from an
+  image, which is all this package does.
+
+No code in the package changed. Its README now says xunit `4.0.2` or newer.
+
+**Creomobile.Data.Abstractions, Creomobile.Data.EFCore.CamelCaseColumns,
+Creomobile.Data.EFCore.Timestamps — no change.** Republished at the lockstep version;
+`Creomobile.Data.EFCore.Timestamps` requires `Creomobile.Data.Abstractions` at `>= 0.3.1`.
+
 ## 0.3.0 — 2026-10-03
 
 **Creomobile.Testing.Postgres.Xunit requires xunit 4.** The `xunit.v3.extensibility.core`

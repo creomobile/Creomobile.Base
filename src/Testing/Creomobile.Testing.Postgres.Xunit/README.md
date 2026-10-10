@@ -104,7 +104,7 @@ that is worth telling us: a named operation can then replace the raw handle.
 - **.NET 10.** The package ships a `net10.0` assembly only — a test project on an earlier
   target framework cannot use it.
 - A reachable Docker daemon. The image is pulled on first use if it is not already local.
-- **xunit `4.x`** (`4.0.1` or newer). The dependency is on `xunit.v3.extensibility.core`
+- **xunit `4.x`** (`4.0.2` or newer). The dependency is on `xunit.v3.extensibility.core`
   alone, declared as a floor, so the package imposes no test runner on you. The type you
   register has a parameterless constructor, so xunit's `xUnit3005` rule is satisfied
   without any suppression. Versions before `0.3.0` also served xunit `3.2.x`; that line

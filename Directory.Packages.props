@@ -11,13 +11,13 @@
 		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
 		<PackageVersion Include="Npgsql" Version="10.0.3" />
 		<PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
-		<PackageVersion Include="Testcontainers.PostgreSql" Version="4.15.0" />
-		<PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
-		<PackageVersion Include="xunit.v3" Version="4.0.1" />
+		<PackageVersion Include="Testcontainers.PostgreSql" Version="4.16.0" />
+		<PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
+		<PackageVersion Include="xunit.v3" Version="4.0.2" />
 		<!-- The floor the published Creomobile.Testing.Postgres.Xunit compiles against, so a
 		     bump here is a change to that package's requirements, not only to this build.
 		     Until 0.3.0 it was held at 3.2.2 to keep serving xunit 3; that line stopped
 		     moving when xunit 4 shipped, and the package now requires xunit 4. -->
-		<PackageVersion Include="xunit.v3.extensibility.core" Version="4.0.1" />
+		<PackageVersion Include="xunit.v3.extensibility.core" Version="4.0.2" />
 	</ItemGroup>
 </Project>
