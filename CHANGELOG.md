@@ -7,6 +7,31 @@ others depend on has to be there for their dependency floor to resolve.
 
 Dates are release dates. Versions are the tags `<package-id-lowercase>/v<version>`.
 
+## 0.3.2 — 2026-10-14
+
+**The three packages that have dependencies move to the .NET 10.0.13 servicing release.**
+These are dependency floors, which is what a consumer actually feels: taking 0.3.2 means
+resolving at least these versions.
+
+- `Creomobile.Data.EFCore.CamelCaseColumns` and `Creomobile.Data.EFCore.Timestamps` —
+  `Microsoft.EntityFrameworkCore.Relational` 10.0.12 to 10.0.13.
+- `Creomobile.Testing.Postgres.Xunit` — `Microsoft.Extensions.Logging.Abstractions` 10.0.12
+  to 10.0.13.
+
+10.0.13 is a security release of the platform (2026-10-13); the EF Core change inside it is
+one fix for JSON-mapped complex collections, which none of these packages use. The reason to
+take it is the floor itself: a consumer that moves its own EF Core packages to 10.0.13 — the
+`Design` package, say — while still holding these packages at 0.3.1 ends up with 10.0.12 and
+10.0.13 of the same assemblies in one build, and MSBuild refuses that (MSB3277). The 10.0.13
+floor is what lets a consumer move with the platform.
+
+**Creomobile.Data.Abstractions — no change.** It has no package dependencies at all.
+Republished at the lockstep version; `Creomobile.Data.EFCore.Timestamps` requires
+`Creomobile.Data.Abstractions` at `>= 0.3.2`.
+
+Inside this repository only, and carried by nothing a consumer installs: `Microsoft.NET.Test.Sdk`
+18.10.1 to 18.11.0 in the test projects.
+
 ## 0.3.1 — 2026-10-10
 
 **Creomobile.Testing.Postgres.Xunit moves two dependency floors**, which is what a consumer
