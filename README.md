@@ -16,6 +16,10 @@ package targets .NET 10, because that is what our projects run and what EF Core 
 requires. A version, once published, is never replaced or withdrawn — so if one works
 for you, it keeps working.
 
+What we do promise, since 1.0.0, is that the version number tells you when an update can
+break you: a change that can break existing code is a new major version, and a minor or a
+patch never is. [CHANGELOG.md](CHANGELOG.md) says what counts as breaking.
+
 If you depend on one of these and something here would hurt, open an issue. A real
 user changes the calculation, and we would rather hear it than guess.
 

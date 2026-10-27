@@ -7,6 +7,42 @@ others depend on has to be there for their dependency floor to resolve.
 
 Dates are release dates. Versions are the tags `<package-id-lowercase>/v<version>`.
 
+## 1.0.0 — 2026-10-27
+
+**The first stable version: from here on the version number is a promise about
+compatibility.** No public API changed to get here — 1.0.0 is 0.3.2 with two dependency floors
+raised, declared stable. What each part of the number means from now on:
+
+- **Major** — anything that can break a consumer that compiled and ran against the previous
+  version: a public type or member removed or renamed, the behaviour of an existing one
+  changed, a target framework dropped, or a dependency floor moved to a new major of that
+  dependency (xunit 5, EF Core 12).
+- **Minor** — something new that existing code does not have to notice: a new public API, a
+  new package.
+- **Patch** — fixes, and dependency floors raised within the same major (a .NET servicing
+  release, as in this version).
+
+During 0.x the minor did the major's job — 0.3.0 was a minor because it required xunit 4.
+That ends here. The lockstep stays: every package shares one version, so a major in one of
+them is a major for all four.
+
+**The two packages that depend on the platform move to the .NET 10.0.14 servicing release.**
+
+- `Creomobile.Data.EFCore.CamelCaseColumns` and `Creomobile.Data.EFCore.Timestamps` —
+  `Microsoft.EntityFrameworkCore.Relational` 10.0.13 to 10.0.14.
+- `Creomobile.Testing.Postgres.Xunit` — `Microsoft.Extensions.Logging.Abstractions` 10.0.13
+  to 10.0.14.
+
+10.0.14 is an out-of-band security release of the platform (2026-10-25): a Brotli decoder fix
+and a socket-address fix for `ReceiveFromAsync`, both in the runtime. Neither dependency
+changed anything but its version number. The reason to take it is the floor, as in 0.3.2: a
+consumer that moves its own EF Core packages to 10.0.14 while holding these at 0.3.2 gets
+10.0.13 and 10.0.14 of the same assemblies in one build, which fails (MSB3277, CS1705).
+
+**Creomobile.Data.Abstractions — no change.** It has no package dependencies at all.
+Republished at the lockstep version; `Creomobile.Data.EFCore.Timestamps` requires
+`Creomobile.Data.Abstractions` at `>= 1.0.0`.
+
 ## 0.3.2 — 2026-10-14
 
 **The three packages that have dependencies move to the .NET 10.0.13 servicing release.**
