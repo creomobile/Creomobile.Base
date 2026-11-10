@@ -7,6 +7,37 @@ others depend on has to be there for their dependency floor to resolve.
 
 Dates are release dates. Versions are the tags `<package-id-lowercase>/v<version>`.
 
+## 1.0.1 — 2026-11-10
+
+**A patch: three packages raise their dependency floors within the same majors.** No code in
+any package changed.
+
+- `Creomobile.Data.EFCore.CamelCaseColumns` and `Creomobile.Data.EFCore.Timestamps` —
+  `Microsoft.EntityFrameworkCore.Relational` 10.0.14 to 10.0.15.
+- `Creomobile.Testing.Postgres.Xunit` — `Microsoft.Extensions.Logging.Abstractions` 10.0.14
+  to 10.0.15, and `xunit.v3.extensibility.core` 4.0.2 to 4.0.3.
+
+10.0.15 is a security release of the platform (2026-11-10, 16 CVEs). The fixes are in the
+shared framework, which a consumer gets from its runtime rather than from these packages. In
+the packages themselves, `Logging.Abstractions` changed nothing but its version number, and EF
+Core carries three bug fixes, none on these packages' path: `ExecuteDelete` was tagged as
+`ExecuteUpdate`, complex collections recorded spurious changes, and
+`IReadOnlyCollection<T>.Contains` now translates to SQL. The reason to take it is the floor, as
+in 1.0.0: a consumer that moves its own EF Core packages to 10.0.15 while holding these at
+1.0.0 gets 10.0.14 and 10.0.15 of the same assemblies in one build, which fails (MSB3277,
+CS1705).
+
+xunit 4.0.3 is a bug-fix release. The change a user of this package may notice: under the
+Microsoft Testing Platform, a fixture whose `DisposeAsync` throws is now reported as a failure
+of the tests it served instead of passing unseen — so a container that fails to stop turns a
+run red. It also brings `xunit.analyzers` 2.3.0, whose new rule xUnit1073 flags a collection
+definition nothing uses. xunit binds its own packages to one exact version, so a test project
+on `4.0.2` moves to `4.0.3` with this package. Its README now says xunit `4.0.3` or newer.
+
+**Creomobile.Data.Abstractions — no change.** It has no package dependencies at all.
+Republished at the lockstep version; `Creomobile.Data.EFCore.Timestamps` requires
+`Creomobile.Data.Abstractions` at `>= 1.0.1`.
+
 ## 1.0.0 — 2026-10-27
 
 **The first stable version: from here on the version number is a promise about
