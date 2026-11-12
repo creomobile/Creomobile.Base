@@ -12,6 +12,12 @@
 
 	<ItemGroup>
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+		<!-- xunit.v3 makes a project a test executable, and its build refuses any project
+		     with xunit.v3 that is not an Exe. A library needs only xunit.v3.extensibility.core,
+		     which Creomobile.Testing.Postgres.Xunit brings. Until 2026-11-13 the refusal never
+		     fired: Microsoft.NET.Test.Sdk, then in tests/Directory.Build.props, set OutputType
+		     to Exe in its own targets, overriding the Library above. -->
+		<PackageReference Remove="xunit.v3" />
 	</ItemGroup>
 
 	<ItemGroup>
