@@ -97,8 +97,11 @@ jobs:
               || { echo "::error::run $BUILD_RUN_ID carries $count artifacts, expected exactly one"; exit 1; }
           [[ $expired == false ]] \
               || { echo "::error::the artifact of run $BUILD_RUN_ID has expired - build the version again"; exit 1; }
-          [[ $artifact =~ ^packages-(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] \
-              || { echo "::error::artifact '$artifact' is not named packages-<X.Y.Z>"; exit 1; }
+          # X.Y.Z, or X.Y.Z-rc.N for a candidate (build.yml says what one is). Everything
+          # below treats the two alike: the same tag form, the same lockstep check, the same
+          # receipts. A candidate is exactly as irreversible as a release.
+          [[ $artifact =~ ^packages-(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-rc\.[1-9][0-9]*)?$ ]] \
+              || { echo "::error::artifact '$artifact' is not named packages-<X.Y.Z> or packages-<X.Y.Z-rc.N>"; exit 1; }
           version=${artifact#packages-}
 
           # `git/ref/tags/<name>` resolves the tag; a lightweight tag points straight at the

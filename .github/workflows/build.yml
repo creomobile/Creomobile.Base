@@ -10,6 +10,11 @@
 # TWO WAYS IN, and they accept different things.
 #   * A tag `creomobile.base/v<version>` is the real release request. The version is
 #     taken from the tag and must equal the one this repository declares.
+#     The version is X.Y.Z, or X.Y.Z-rc.N for a CANDIDATE *(since 2026-11-17)*: a version
+#     marked as not yet the release, which NuGet calls a prerelease, published so that a
+#     consumer can try it before the number X.Y.Z is spent. A candidate's tag may stand on
+#     a commit of a branch other than master; a tag starts this workflow from whatever
+#     commit it names.
 #   * `workflow_dispatch` is for exercising the machinery. It runs on a branch, where
 #     there is no tag to compare anything against, so the version to expect is given as
 #     an input. It proves the build and the artifact; it does not prove the tag contract.
@@ -73,17 +78,25 @@ jobs:
           # Canonical form only. A leading zero would pass a looser check and then mean
           # two different things at once: NuGet normalises `01.0.0` to `1.0.0`, so the
           # tag and the published package would disagree about which release this is.
-          [[ $version =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] \
-              || { echo "::error::'$version' is not a canonical X.Y.Z version"; exit 1; }
+          # A candidate carries one mark, `-rc.N` with N from 1, and no other.
+          [[ $version =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-rc\.[1-9][0-9]*)?$ ]] \
+              || { echo "::error::'$version' is not a canonical X.Y.Z or X.Y.Z-rc.N version"; exit 1; }
+          # The release a candidate leads to: the same number without the mark. Equal to
+          # the version itself for a release.
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "release_version=${version%%-*}" >> "$GITHUB_OUTPUT"
           echo "this run is for $version"
 
       # Before the SDK is even installed: it costs milliseconds and fails the whole run,
       # and waiting through a test suite to learn that a changelog entry was forgotten is
       # a bad trade even where minutes are free.
+      #
+      # A candidate is held to the entry of ITS RELEASE: 1.0.2-rc.1 needs `## 1.0.2`. The
+      # entry describes what 1.0.2 will be, and the candidates are attempts at it, so the
+      # changelog keeps one entry per release, shared by its candidates.
       - name: The changelog has an entry for this version
         env:
-          VERSION: ${{ steps.expected.outputs.version }}
+          VERSION: ${{ steps.expected.outputs.release_version }}
         run: |
           set -euo pipefail
           grep -qE "^## ${VERSION//./\\.}( |$)" CHANGELOG.md \

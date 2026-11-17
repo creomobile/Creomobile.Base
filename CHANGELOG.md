@@ -7,6 +7,23 @@ others depend on has to be there for their dependency floor to resolve.
 
 Dates are release dates. Versions are the tags `<package-id-lowercase>/v<version>`.
 
+## 1.0.2 — not released yet
+
+**No package changes for its users.** What is new is in how the repository is tested and
+released.
+
+- The test projects no longer reference `Microsoft.NET.Test.Sdk` and
+  `xunit.runner.visualstudio`. Both were kept only for test discovery in an IDE over VSTest,
+  and the suite runs on the Microsoft Testing Platform without them. No shipped package
+  referenced either.
+- **Candidates.** A version can now be published as `X.Y.Z-rc.N` — a version marked as not
+  yet the release, which NuGet calls a prerelease: a client does not pick it as the newest
+  version unless asked to consider prereleases — so that a consumer can try it before the
+  number `X.Y.Z` is spent. The candidates of this release are `1.0.2-rc.N`; they have no
+  entry of their own, and this one describes what `1.0.2` will be.
+
+All four packages are republished at the lockstep version, as always.
+
 ## 1.0.1 — 2026-11-10
 
 **A patch: three packages raise their dependency floors within the same majors.** No code in
